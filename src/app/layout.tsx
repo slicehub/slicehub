@@ -41,7 +41,11 @@ export default async function RootLayout({
           <XOContractsProvider>
             <TimerProvider>
               <WalletProvider>
-                <ContextProvider cookies={cookies}>{children}</ContextProvider>
+                <ContextProvider cookies={cookies}>
+                  <div className="w-full max-w-[430px] min-h-screen bg-white shadow-2xl relative flex flex-col">
+                    {children}
+                  </div>
+                </ContextProvider>
               </WalletProvider>
             </TimerProvider>
           </XOContractsProvider>
