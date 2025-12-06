@@ -1,8 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
-import { ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { createContext, useContext, ReactNode } from "react";
 
 interface ContextType {
   isEmbedded: boolean;
@@ -18,17 +16,14 @@ export const useEmbedded = () => {
   return context;
 };
 
-interface Props {
-  children: ReactNode;
-}
+export const EmbeddedProvider = ({ children }: { children: ReactNode }) => {
+  // 1. Determine the current environment
+  // We check NEXT_PUBLIC_APP_ENV first (e.g. "staging", "production")
+  // Fallback to NODE_ENV (standard Next.js env)
+  const currentEnv = process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV;
 
-// rutas donde NO es embedded
-const NOT_EMBEDDED_ROUTES = new Set<string>(["/not-embedded"]);
-
-export const EmbeddedProvider = ({ children }: Props) => {
-  const pathname = usePathname();
-
-  const isEmbedded = !NOT_EMBEDDED_ROUTES.has(pathname);
+  // 2. Logic: If Production -> Embedded. Else -> Not Embedded.
+  const isEmbedded = currentEnv === "production";
 
   return (
     <EmbeddedContext.Provider value={{ isEmbedded }}>

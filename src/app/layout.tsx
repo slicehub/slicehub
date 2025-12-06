@@ -38,17 +38,17 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex justify-center min-h-screen bg-gray-100`}
       >
         <EmbeddedProvider>
-          <XOContractsProvider>
-            <TimerProvider>
-              <WalletProvider>
-                <ContextProvider cookies={cookies}>
+          <ContextProvider cookies={cookies}>
+            <XOContractsProvider>
+              <TimerProvider>
+                <WalletProvider>
                   <div className="w-full max-w-[430px] min-h-screen bg-white shadow-2xl relative flex flex-col">
                     {children}
                   </div>
-                </ContextProvider>
-              </WalletProvider>
-            </TimerProvider>
-          </XOContractsProvider>
+                </WalletProvider>
+              </TimerProvider>
+            </XOContractsProvider>
+          </ContextProvider>
         </EmbeddedProvider>
       </body>
     </html>
