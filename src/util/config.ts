@@ -12,7 +12,9 @@ type ChainDetail = {
   iconUrls: readonly string[];
 };
 
-type CeloConfig = {
+
+
+type ChainConfig = {
   chainId: number;
   rpcUrls: { [key: number]: string };
   supportedChains: readonly [ChainDetail];
@@ -21,60 +23,58 @@ type CeloConfig = {
 export type SettingsType = {
   apiDomain: string;
   environment: "development" | "staging" | "production";
-  celo: CeloConfig;
+  chain: ChainConfig;
 };
 
-// 2. Define Celo Sepolia (New Testnet)
-// Chain ID: 11142220
-const CELO_SEPOLIA: CeloConfig = {
-  chainId: 11142220,
-  // RPC URL from Celo Docs / Hardhat config
-  rpcUrls: { 11142220: "https://forno.celo-sepolia.celo-testnet.org" },
+// Define Base Sepolia (Testnet)
+const BASE_SEPOLIA_CONFIG = {
+  chainId: 84532,
+  rpcUrls: { 84532: "https://sepolia.base.org" },
   supportedChains: [
     {
-      chainId: "0xaa044c", // Hex for 11142220
-      chainName: "Celo Sepolia",
-      nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
-      rpcUrls: ["https://forno.celo-sepolia.celo-testnet.org"],
-      blockExplorerUrls: ["https://celo-sepolia.blockscout.com"], // Celo's Blockscout
-      iconUrls: ["https://cryptologos.cc/logos/celo-celo-logo.png"],
+      chainId: "0x14a34", // Hex for 84532
+      chainName: "Base Sepolia",
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      rpcUrls: ["https://sepolia.base.org"],
+      blockExplorerUrls: ["https://sepolia.basescan.org"],
+      iconUrls: ["https://avatars.githubusercontent.com/u/108554348?s=200&v=4"],
     },
   ],
 } as const;
 
-// 3. Define Celo Mainnet (No change needed here, retained for completeness)
-const CELO_MAINNET: CeloConfig = {
-  chainId: 42220,
-  rpcUrls: { 42220: "https://forno.celo.org" },
+// Define Base Mainnet
+const BASE_MAINNET_CONFIG = {
+  chainId: 8453,
+  rpcUrls: { 8453: "https://mainnet.base.org" },
   supportedChains: [
     {
-      chainId: "0xa4ec", // Hex for 42220
-      chainName: "Celo",
-      nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 },
-      rpcUrls: ["https://forno.celo.org"],
-      blockExplorerUrls: ["https://celoscan.io"],
-      iconUrls: ["https://cryptologos.cc/logos/celo-celo-logo.png"],
+      chainId: "0x2105", // Hex for 8453
+      chainName: "Base",
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      rpcUrls: ["https://mainnet.base.org"],
+      blockExplorerUrls: ["https://basescan.org"],
+      iconUrls: ["https://avatars.githubusercontent.com/u/108554348?s=200&v=4"],
     },
   ],
 } as const;
 
-// 4. Update Environments to use CELO_SEPOLIA
+// Update Environments
 const development: SettingsType = {
   apiDomain: "http://localhost:5001",
   environment: "development",
-  celo: CELO_SEPOLIA, // Using the new testnet
+  chain: BASE_SEPOLIA_CONFIG,
 };
 
 const staging: SettingsType = {
   apiDomain: "https://staging-api.slicehub.com",
   environment: "staging",
-  celo: CELO_SEPOLIA, // Using the new testnet
+  chain: BASE_SEPOLIA_CONFIG,
 };
 
 const production: SettingsType = {
   apiDomain: "https://api.slicehub.com",
   environment: "production",
-  celo: CELO_MAINNET,
+  chain: BASE_MAINNET_CONFIG,
 };
 
 // 5. Export Config based on Environment Variable

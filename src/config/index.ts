@@ -1,24 +1,22 @@
+// 1. Import Base networks directly from Reown
+import { baseSepolia, base } from "@reown/appkit/networks";
+import { cookieStorage, createStorage } from "wagmi";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
-import { celo, celoSepolia } from "@reown/appkit/networks";
-import type { AppKitNetwork } from "@reown/appkit/networks";
 
-// Get projectId from https://dashboard.reown.com
-export const projectId =
-  process.env.NEXT_PUBLIC_PROJECT_ID || "b56e18d47c72ab683b10814fe9495694"; // this is a public projectId only to use on localhost
+const projectIdRaw = process.env.NEXT_PUBLIC_PROJECT_ID;
+if (!projectIdRaw) throw new Error("Project ID is not defined");
+export const projectId = projectIdRaw;
 
-if (!projectId) {
-  throw new Error("Project ID is not defined");
-}
+// 2. Update networks array (use base or baseSepolia as default)
+export const networks: [typeof baseSepolia, typeof base] = [baseSepolia, base];
 
-export const networks = [celo, celoSepolia] as [
-  AppKitNetwork,
-  ...AppKitNetwork[],
-];
-
-//Set up the Wagmi Adapter (Config)
+// 3. Pass to Adapter
 export const wagmiAdapter = new WagmiAdapter({
+  storage: createStorage({
+    storage: cookieStorage,
+  }),
   ssr: true,
-  projectId,
+  projectId: projectId as string,
   networks,
 });
 

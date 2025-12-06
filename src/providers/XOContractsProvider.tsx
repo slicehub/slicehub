@@ -47,7 +47,7 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
   const { open } = useAppKit(); // Triggers the Reown Modal
 
   // Get active chain config (Testnet vs Mainnet)
-  const activeChain = settings.celo.supportedChains[0];
+  const activeChain = settings.chain.supportedChains[0];
 
   // 1. XO Connection Logic (Embedded)
   const connectXO = async () => {
