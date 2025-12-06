@@ -37,7 +37,7 @@ export function useAssignDispute() {
       // 2. Send Transaction (Payable)
       // We convert the stake amount to a string for parseEther.
       // Assuming 'stakeAmount' from UI is in full units (e.g. "20" MATIC), not Wei.
-      const ethAmount = stakeAmount.toString();
+      const _ethAmount = stakeAmount.toString();
 
       // In Ethers v6, overrides like { value } are passed as the last argument
       const tx = await contract.joinDispute(latestDisputeId, {
