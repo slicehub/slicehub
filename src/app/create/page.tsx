@@ -2,10 +2,9 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CategoryAmountHeader } from "@/components/category-amount/CategoryAmountHeader";
-import { InfoCard } from "@/components/category-amount/InfoCard";
-import { SwipeButton } from "@/components/category-amount/SwipeButton";
 import { useCreateDispute } from "@/hooks/useCreateDispute";
+import { Loader2, UploadCloud, ShieldAlert, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export default function CreateDisputePage() {
@@ -13,145 +12,180 @@ export default function CreateDisputePage() {
   const { createDispute, isCreating } = useCreateDispute();
 
   // Form State
-  const [defenderAddress, setDefenderAddress] = useState("");
+  const [title, setTitle] = useState("");
   const [category, setCategory] = useState("General");
+  const [description, setDescription] = useState("");
+  const [defenderAddress, setDefenderAddress] = useState("");
+  const [evidenceLink, setEvidenceLink] = useState("");
+
+  // NEW: State for number of jurors
   const [jurorsRequired, setJurorsRequired] = useState(3);
 
-  const handleBack = () => {
-    router.push("/disputes");
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const handleSwipeComplete = async () => {
-    if (!defenderAddress) {
-      toast.error("Please enter a defender address");
-      // Reset swipe logic would go here in a real app
+    if (!title || !description || !defenderAddress) {
+      toast.error("Please fill in all required fields.");
       return;
     }
 
-    // Trigger the hook
-    await createDispute(defenderAddress, category, jurorsRequired);
+    // Basic validation for odd number of jurors to prevent ties
+    if (jurorsRequired % 2 === 0) {
+      toast.error("Please select an odd number of jurors to prevent ties.");
+      return;
+    }
 
-    // On success (hook handles toast), navigate back or to the new dispute
-    // For now, we go back to list
-    router.push("/disputes");
+    const disputeData = {
+      title,
+      description,
+      category,
+      evidence: evidenceLink ? [evidenceLink] : [],
+      created_at: new Date().toISOString(),
+    };
+
+    // Pass jurorsRequired as the 4th argument
+    await createDispute(defenderAddress, category, disputeData, jurorsRequired);
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 p-4">
-      {/* Reusing Header for consistency */}
-      <CategoryAmountHeader onBack={handleBack} />
-
-      <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center text-center mb-4 overflow-y-auto">
-        {/* Hero Animation */}
-        <div className="w-20 h-20 mb-4 bg-gray-50 rounded-full flex items-center justify-center overflow-hidden">
-          {/* Reusing an existing animation for visual consistency */}
-          <video
-            src="/animations/category.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        <h1 className="text-2xl font-bold mb-2 text-[#1b1c23] font-manrope">
+    <div className="min-h-screen bg-gray-50 flex flex-col p-4">
+      <div className="mb-6 mt-4">
+        <h1 className="text-2xl font-extrabold text-[#1b1c23]">
           Create Dispute
         </h1>
+        <p className="text-sm text-gray-500">Initiate a new claim on-chain.</p>
+      </div>
 
-        <p className="text-gray-500 text-sm mb-6 font-manrope">
-          Define the parameters to initialize a new resolution process on-chain.
-        </p>
-
-        {/* Inputs Container */}
-        <div className="w-full flex flex-col gap-4 text-left">
-          {/* Defender Address Input */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-[#1b1c23] uppercase tracking-wider ml-1">
-              Defender Address
+      <div className="flex-1 bg-white rounded-[18px] p-6 shadow-sm border border-gray-100 flex flex-col gap-6 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {/* ... [Title Input] ... */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-[#1b1c23]">
+              Dispute Title
             </label>
             <input
               type="text"
-              placeholder="0x..."
-              value={defenderAddress}
-              onChange={(e) => setDefenderAddress(e.target.value)}
-              className="w-full bg-[#F5F6F9] border-none rounded-xl px-4 py-3 text-sm font-manrope text-[#1b1c23] focus:ring-2 focus:ring-[#8c8fff] outline-none transition-all placeholder:text-gray-400"
+              className="p-3 bg-[#f5f6f9] rounded-xl text-sm border-none focus:ring-2 focus:ring-[#8c8fff] outline-none"
+              placeholder="e.g. Freelance work not paid"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={isCreating}
             />
           </div>
 
-          {/* Category Selection */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-[#1b1c23] uppercase tracking-wider ml-1">
-              Category
-            </label>
-            <div className="relative">
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-[#F5F6F9] border-none rounded-xl px-4 py-3 text-sm font-manrope text-[#1b1c23] focus:ring-2 focus:ring-[#8c8fff] outline-none appearance-none cursor-pointer"
-              >
-                <option value="General">General</option>
-                <option value="Crowdfunding">Crowdfunding</option>
-                <option value="Freelancing">Freelancing</option>
-                <option value="Defi">DeFi Protocol</option>
-              </select>
-              {/* Custom Chevron */}
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <img
-                  src="/images/category-amount/chevron-down.svg"
-                  alt="v"
-                  className="w-3 h-2 opacity-50"
-                />
-              </div>
-            </div>
+          {/* ... [Category Select] ... */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-[#1b1c23]">Category</label>
+            <select
+              className="p-3 bg-[#f5f6f9] rounded-xl text-sm border-none focus:ring-2 focus:ring-[#8c8fff] outline-none"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              disabled={isCreating}
+            >
+              <option value="General">General Court</option>
+              <option value="Tech">Tech & Software</option>
+              <option value="Freelance">Freelance & Services</option>
+              <option value="E-Commerce">E-Commerce</option>
+            </select>
           </div>
 
-          {/* Jurors Count Stepper */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-[#1b1c23] uppercase tracking-wider ml-1">
-              Jurors Required
+          {/* ... [Defender Address Input] ... */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-[#1b1c23]">
+              Defendant Address
             </label>
-            <div className="flex items-center justify-between bg-[#F5F6F9] rounded-xl p-1">
-              <button
-                onClick={() =>
-                  setJurorsRequired(Math.max(1, jurorsRequired - 1))
-                }
-                className="w-10 h-10 flex items-center justify-center bg-white rounded-lg text-[#1b1c23] font-bold shadow-sm active:scale-95 transition-transform"
-              >
-                -
-              </button>
-              <span className="font-manrope font-bold text-[#1b1c23] text-lg">
-                {jurorsRequired}
+            <input
+              type="text"
+              className="p-3 bg-[#f5f6f9] rounded-xl text-sm font-mono border-none focus:ring-2 focus:ring-[#8c8fff] outline-none"
+              placeholder="0x..."
+              value={defenderAddress}
+              onChange={(e) => setDefenderAddress(e.target.value)}
+              disabled={isCreating}
+            />
+          </div>
+
+          {/* NEW: Jurors Required Input */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-[#1b1c23] flex justify-between">
+              <span>Jurors Needed</span>
+              <span className="text-[#8c8fff] font-normal">
+                {jurorsRequired} Jurors
               </span>
-              <button
-                onClick={() => setJurorsRequired(jurorsRequired + 1)}
-                className="w-10 h-10 flex items-center justify-center bg-white rounded-lg text-[#1b1c23] font-bold shadow-sm active:scale-95 transition-transform"
-              >
-                +
-              </button>
+            </label>
+            <div className="flex items-center gap-4 bg-[#f5f6f9] p-3 rounded-xl">
+              <Users size={18} className="text-gray-400" />
+              <input
+                type="range"
+                min="1"
+                max="11"
+                step="2" // Steps of 2 ensures odd numbers (3, 5, 7, 9, 11)
+                value={jurorsRequired}
+                onChange={(e) => setJurorsRequired(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#8c8fff]"
+                disabled={isCreating}
+              />
+            </div>
+            <p className="text-xs text-gray-400">
+              Odd numbers only to avoid ties (3, 5, 7...).
+            </p>
+          </div>
+
+          {/* ... [Description Textarea] ... */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-[#1b1c23]">
+              Description
+            </label>
+            <textarea
+              className="p-3 bg-[#f5f6f9] rounded-xl text-sm border-none focus:ring-2 focus:ring-[#8c8fff] outline-none min-h-[120px] resize-none"
+              placeholder="Describe the issue in detail..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={isCreating}
+            />
+          </div>
+
+          {/* ... [Evidence Input] ... */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-[#1b1c23]">
+              Evidence Link (Optional)
+            </label>
+            <div className="flex items-center gap-2 bg-[#f5f6f9] rounded-xl p-3">
+              <UploadCloud size={16} className="text-gray-400" />
+              <input
+                type="text"
+                className="bg-transparent text-sm border-none focus:ring-0 outline-none w-full"
+                placeholder="https://..."
+                value={evidenceLink}
+                onChange={(e) => setEvidenceLink(e.target.value)}
+                disabled={isCreating}
+              />
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Info Card - slightly modified message */}
-      <div className="mb-24">
-        {" "}
-        {/* Extra margin for the swipe button */}
-        <InfoCard />
-      </div>
-
-      <div className="fixed bottom-8 left-0 right-0 flex justify-center px-4 z-10">
-        {isCreating ? (
-          <div className="bg-[#1b1c23] text-white px-6 py-3 rounded-2xl font-manrope font-bold animate-pulse flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Creating Dispute...
+          <div className="mt-4">
+            <Button
+              type="submit"
+              disabled={isCreating}
+              className={`
+                w-full py-6 rounded-xl font-manrope font-extrabold text-sm tracking-tight
+                flex items-center justify-center gap-2 transition-all
+                ${isCreating ? "bg-gray-300" : "bg-[#1b1c23] hover:bg-[#31353b] text-white"}
+              `}
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Uploading to IPFS & Signing...
+                </>
+              ) : (
+                <>
+                  <ShieldAlert className="w-4 h-4" />
+                  CREATE DISPUTE
+                </>
+              )}
+            </Button>
           </div>
-        ) : (
-          <SwipeButton onSwipeComplete={() => void handleSwipeComplete()}>
-            Swipe to create dispute
-          </SwipeButton>
-        )}
+        </form>
       </div>
     </div>
   );

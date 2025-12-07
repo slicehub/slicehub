@@ -1,6 +1,6 @@
 export const sliceAddress = process.env.NEXT_PUBLIC_SLICE_ADDRESS
   ? process.env.NEXT_PUBLIC_SLICE_ADDRESS
-  : "0xdea7b2c006CB8263F50367Ed5363C92047e4C3a7"; // TODO: Update with deployed Base contract address
+  : "0x9deDB079b88442E48Df54479fa6Ee377dCbAF187";
 
 export const sliceAbi = [
   {
@@ -182,6 +182,11 @@ export const sliceAbi = [
       {
         internalType: "string",
         name: "_category",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "_ipfsHash",
         type: "string",
       },
       {
