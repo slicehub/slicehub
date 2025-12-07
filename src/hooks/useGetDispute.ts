@@ -3,12 +3,11 @@ import { useSliceContract } from "./useSliceContract";
 import { fetchJSONFromIPFS } from "@/util/ipfs";
 
 export interface DisputeData {
-  // --- On-Chain Data (Source of Truth for Logic) ---
   id: bigint;
   claimer: string;
   defender: string;
   status: number;
-  category: string; // Comes directly from contract
+  category: string;
   jurors_required: number;
   deadline_pay_seconds: bigint;
   deadline_commit_seconds: bigint;
@@ -16,58 +15,87 @@ export interface DisputeData {
   assigned_jurors: string[];
   winner?: string;
   requiredStake: bigint;
-
-  // --- Off-Chain Data (Source of Truth for Display) ---
   title?: string;
   description?: string;
   evidence?: string[];
+  deadline: string;
 }
 
 export function useGetDispute(disputeId: string | number) {
   const contract = useSliceContract();
   const [dispute, setDispute] = useState<DisputeData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchDispute = useCallback(async () => {
     if (!contract || !disputeId) return;
 
     setIsLoading(true);
+    setError(null);
+
     try {
-      // 1. Get On-Chain Data
+      console.log(`🔍 Fetching Dispute #${disputeId}...`);
+
+      // 1. Fetch Struct from Smart Contract
       const d = await contract.disputes(disputeId);
 
-      // 2. Get IPFS Hash
-      const ipfsHash = d.ipfsHash;
+      // DEBUG: Log exactly what the contract returned
+      console.log("📜 Contract Data:", {
+        id: d.id.toString(),
+        ipfsHash: d.ipfsHash, // Check if this is empty!
+        category: d.category,
+      });
 
-      let metadata: any = {};
-      if (ipfsHash) {
-        // 3. Fetch Off-Chain Data
-        metadata = await fetchJSONFromIPFS(ipfsHash);
+      let metadata: any = {
+        title: `Dispute #${d.id}`,
+        description: "No description available.",
+      };
+
+      // 2. Fetch Metadata from IPFS
+      if (d.ipfsHash && d.ipfsHash.length > 0) {
+        console.log(`🌐 Fetching IPFS Hash: ${d.ipfsHash}`);
+
+        const ipfsData = await fetchJSONFromIPFS(d.ipfsHash);
+
+        if (ipfsData) {
+          console.log("✅ IPFS Data Received:", ipfsData);
+          metadata = ipfsData;
+        } else {
+          console.warn("⚠️ IPFS Fetch failed or returned null");
+        }
+      } else {
+        console.warn("⚠️ No IPFS Hash found on contract for this dispute.");
       }
 
+      // 3. Calculate UI Deadline
+      const deadlineDate = new Date(Number(d.commitDeadline) * 1000);
+      const formattedDeadline = deadlineDate.toLocaleDateString("en-GB");
+
       setDispute({
-        // --- On-Chain Mapping ---
         id: d.id,
         claimer: d.claimer,
         defender: d.defender,
         status: Number(d.status),
-        // CRITICAL: Category is read from chain to ensure subcourt accuracy
         category: d.category,
         jurors_required: Number(d.jurorsRequired),
         deadline_pay_seconds: d.payDeadline,
         deadline_commit_seconds: d.commitDeadline,
         deadline_reveal_seconds: d.revealDeadline,
         requiredStake: d.requiredStake,
-        winner: d.winner,
+        winner:
+          d.winner === "0x0000000000000000000000000000000000000000"
+            ? undefined
+            : d.winner,
         assigned_jurors: [],
-
-        // --- Off-Chain Mapping ---
-        title: metadata.title || `Dispute #${d.id}`,
-        description: metadata.description || "No description provided.",
+        title: metadata.title,
+        description: metadata.description,
         evidence: metadata.evidence || [],
+        deadline: formattedDeadline,
       });
-    } catch (err) {
-      console.error("Error fetching dispute:", err);
+    } catch (err: any) {
+      console.error(`❌ Error fetching dispute ${disputeId}:`, err);
+      setError("Dispute not found or contract error");
+      setDispute(null);
     } finally {
       setIsLoading(false);
     }
@@ -77,5 +105,5 @@ export function useGetDispute(disputeId: string | number) {
     void fetchDispute();
   }, [fetchDispute]);
 
-  return { dispute, isLoading, refetch: fetchDispute };
+  return { dispute, isLoading, error, refetch: fetchDispute };
 }
