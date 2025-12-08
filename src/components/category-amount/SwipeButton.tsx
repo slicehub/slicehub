@@ -3,9 +3,13 @@ import styles from "./SwipeButton.module.css";
 
 interface SwipeButtonProps {
   onSwipeComplete: () => void;
+  children?: React.ReactNode; // Accept any valid React node
 }
 
-export const SwipeButton: React.FC<SwipeButtonProps> = ({ onSwipeComplete }) => {
+export const SwipeButton: React.FC<SwipeButtonProps> = ({
+  onSwipeComplete,
+  children,
+}) => {
   const [swipeProgress, setSwipeProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -21,24 +25,27 @@ export const SwipeButton: React.FC<SwipeButtonProps> = ({ onSwipeComplete }) => 
     }
   };
 
-  const handleMouseMove = React.useCallback((e: MouseEvent) => {
-    if (!isDragging || !buttonRef.current) return;
+  const handleMouseMove = React.useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging || !buttonRef.current) return;
 
-    const rect = buttonRef.current.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const handleWidth = 36;
-    const maxWidth = rect.width - handleWidth;
-    const progress = Math.max(0, Math.min(100, (currentX / maxWidth) * 100));
+      const rect = buttonRef.current.getBoundingClientRect();
+      const currentX = e.clientX - rect.left;
+      const handleWidth = 36;
+      const maxWidth = rect.width - handleWidth;
+      const progress = Math.max(0, Math.min(100, (currentX / maxWidth) * 100));
 
-    currentXRef.current = currentX;
-    setSwipeProgress(progress);
+      currentXRef.current = currentX;
+      setSwipeProgress(progress);
 
-    if (progress >= 80) {
-      onSwipeComplete();
-      setIsDragging(false);
-      setSwipeProgress(0);
-    }
-  }, [isDragging, onSwipeComplete]);
+      if (progress >= 80) {
+        onSwipeComplete();
+        setIsDragging(false);
+        setSwipeProgress(0);
+      }
+    },
+    [isDragging, onSwipeComplete],
+  );
 
   const handleMouseUp = React.useCallback(() => {
     if (isDragging) {
@@ -73,25 +80,28 @@ export const SwipeButton: React.FC<SwipeButtonProps> = ({ onSwipeComplete }) => 
     }
   };
 
-  const handleTouchMove = React.useCallback((e: TouchEvent) => {
-    if (!isDragging || !buttonRef.current) return;
-    e.preventDefault();
+  const handleTouchMove = React.useCallback(
+    (e: TouchEvent) => {
+      if (!isDragging || !buttonRef.current) return;
+      e.preventDefault();
 
-    const rect = buttonRef.current.getBoundingClientRect();
-    const currentX = e.touches[0].clientX - rect.left;
-    const handleWidth = 36;
-    const maxWidth = rect.width - handleWidth;
-    const progress = Math.max(0, Math.min(100, (currentX / maxWidth) * 100));
+      const rect = buttonRef.current.getBoundingClientRect();
+      const currentX = e.touches[0].clientX - rect.left;
+      const handleWidth = 36;
+      const maxWidth = rect.width - handleWidth;
+      const progress = Math.max(0, Math.min(100, (currentX / maxWidth) * 100));
 
-    currentXRef.current = currentX;
-    setSwipeProgress(progress);
+      currentXRef.current = currentX;
+      setSwipeProgress(progress);
 
-    if (progress >= 80) {
-      onSwipeComplete();
-      setIsDragging(false);
-      setSwipeProgress(0);
-    }
-  }, [isDragging, onSwipeComplete]);
+      if (progress >= 80) {
+        onSwipeComplete();
+        setIsDragging(false);
+        setSwipeProgress(0);
+      }
+    },
+    [isDragging, onSwipeComplete],
+  );
 
   const handleTouchEnd = React.useCallback(() => {
     if (isDragging) {
@@ -138,7 +148,9 @@ export const SwipeButton: React.FC<SwipeButtonProps> = ({ onSwipeComplete }) => 
         />
       </div>
 
-      <span className={styles.buttonText}>Desliza para buscar disputas</span>
+      <span className={styles.buttonText}>
+        {children || "Swipe to confirm"}
+      </span>
     </button>
   );
 };

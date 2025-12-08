@@ -85,7 +85,9 @@ export default function CategoryAmountPage() {
             </span>
           </div>
         ) : (
-          <SwipeButton onSwipeComplete={() => void handleSwipeComplete()} />
+          <SwipeButton onSwipeComplete={() => void handleSwipeComplete()}>
+            Swipe to find disputes
+          </SwipeButton>
         )}
       </div>
     </div>

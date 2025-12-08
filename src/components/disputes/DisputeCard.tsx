@@ -1,10 +1,6 @@
 import React from "react";
 import type { Dispute } from "./DisputesList";
-import {
-  CrowdfundingIcon,
-  PersonIcon,
-  VoteIcon,
-} from "./icons/BadgeIcons";
+import { CrowdfundingIcon, PersonIcon, VoteIcon } from "./icons/BadgeIcons";
 import { ApproveIcon, RejectIcon } from "./icons/Icon";
 import { StarIcon } from "./icons/BadgeIcons";
 import styles from "./DisputeCard.module.css";
@@ -19,7 +15,11 @@ export const DisputeCard: React.FC<DisputeCardProps> = ({ dispute }) => {
       <div className={styles.header}>
         <div className={styles.iconContainer}>
           {dispute.icon ? (
-            <img src={dispute.icon} alt={dispute.title} className={styles.icon} />
+            <img
+              src={dispute.icon}
+              alt={dispute.title}
+              className={styles.icon}
+            />
           ) : (
             <div className={styles.defaultIcon}>
               {/* Stellar Community Fund usa el SVG descargado */}
@@ -66,7 +66,7 @@ export const DisputeCard: React.FC<DisputeCardProps> = ({ dispute }) => {
             </span>
             <span className={styles.badge}>
               <PersonIcon size={10} color="#8c8fff" />
-              {dispute.votesCount}/{dispute.totalVotes} votos
+              {dispute.votesCount}/{dispute.totalVotes} votes
             </span>
           </div>
         </div>
@@ -76,7 +76,7 @@ export const DisputeCard: React.FC<DisputeCardProps> = ({ dispute }) => {
         <div className={styles.voteSection}>
           <div className={styles.voteLabel}>
             <VoteIcon size={16} color="#1b1c23" />
-            Tu voto fue:
+            Your vote was:
           </div>
           <div className={styles.voters}>
             {dispute.voters.map((voter, index) => (
@@ -84,20 +84,26 @@ export const DisputeCard: React.FC<DisputeCardProps> = ({ dispute }) => {
                 <div className={styles.voterAvatar}>
                   {voter.avatar ? (
                     <>
-                      <img 
-                        src={voter.avatar} 
+                      <img
+                        src={voter.avatar}
                         alt={voter.name}
                         onError={(e) => {
                           // Si la imagen no se carga, ocultar img y mostrar placeholder
                           const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const placeholder = target.parentElement?.querySelector(`.${styles.avatarPlaceholder}`) as HTMLElement;
+                          target.style.display = "none";
+                          const placeholder =
+                            target.parentElement?.querySelector(
+                              `.${styles.avatarPlaceholder}`,
+                            ) as HTMLElement;
                           if (placeholder) {
-                            placeholder.style.display = 'flex';
+                            placeholder.style.display = "flex";
                           }
                         }}
                       />
-                      <div className={styles.avatarPlaceholder} style={{ display: 'none' }}>
+                      <div
+                        className={styles.avatarPlaceholder}
+                        style={{ display: "none" }}
+                      >
                         {voter.name.charAt(0)}
                       </div>
                     </>
@@ -109,11 +115,7 @@ export const DisputeCard: React.FC<DisputeCardProps> = ({ dispute }) => {
                 </div>
                 <div className={styles.voterName}>{voter.name}</div>
                 <div className={styles.voteIndicator}>
-                  {voter.vote === "approve" ? (
-                    <ApproveIcon />
-                  ) : (
-                    <RejectIcon />
-                  )}
+                  {voter.vote === "approve" ? <ApproveIcon /> : <RejectIcon />}
                 </div>
               </div>
             ))}
@@ -126,9 +128,8 @@ export const DisputeCard: React.FC<DisputeCardProps> = ({ dispute }) => {
           <StarIcon size={15} className={styles.starIcon} />
           <span>{dispute.prize}</span>
         </div>
-        <button className={styles.readButton}>Leer disputa</button>
+        <button className={styles.readButton}>Read Dispute</button>
       </div>
     </div>
   );
 };
-

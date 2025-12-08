@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSliceContract } from "./useSliceContract";
 import { toast } from "sonner";
+import { uploadJSONToIPFS } from "@/util/ipfs";
 
 export function useCreateDispute() {
   const [isCreating, setIsCreating] = useState(false);
@@ -8,7 +9,12 @@ export function useCreateDispute() {
 
   const createDispute = async (
     defenderAddress: string,
-    category: string,
+    category: string, // PASSED SEPARATELY for on-chain subcourt logic
+    disputeData: {
+      title: string;
+      description: string;
+      evidence?: string[];
+    },
     jurorsRequired: number = 3,
   ) => {
     if (!contract) {
@@ -18,16 +24,30 @@ export function useCreateDispute() {
 
     setIsCreating(true);
     try {
+      toast.info("Uploading evidence to IPFS...");
+
+      // 1. Upload Rich Metadata to IPFS
+      // We include category here too just for redundancy/display convenience
+      const ipfsHash = await uploadJSONToIPFS({
+        ...disputeData,
+        category,
+      });
+      if (!ipfsHash) {
+        throw new Error("Failed to upload to IPFS");
+      }
+      console.log("IPFS Hash created:", ipfsHash);
+      toast.info("Creating dispute on-chain...");
+
       // 1. Call the contract function
-      // Note: ethers v6 auto-converts JS numbers to BigInt for uint256 if they are small enough,
-      // but BigInt(...) is safer for large numbers or IDs.
+      const time = 60 * 60 * 24;
       const tx = await contract.createDispute(
         defenderAddress,
-        category,
+        category, // <--- Key for subcourts
+        ipfsHash, // <--- Key for UI content
         BigInt(jurorsRequired),
-        BigInt(3600), // paySeconds
-        BigInt(3600), // commitSeconds
-        BigInt(3600), // revealSeconds
+        BigInt(time), // paySeconds
+        BigInt(time), // commitSeconds
+        BigInt(time), // revealSeconds
       );
 
       console.log("Transaction sent:", tx.hash);
@@ -38,9 +58,6 @@ export function useCreateDispute() {
 
       console.log("Transaction confirmed:", receipt);
       toast.success("Dispute created successfully!");
-
-      // Optional: Parse logs to get the new Dispute ID if needed
-      // (Ethers v6 automatically parses logs in the receipt if ABI is known)
     } catch (error) {
       console.error("Error creating dispute:", error);
       toast.error("Failed to create dispute");

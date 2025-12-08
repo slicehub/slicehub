@@ -17,13 +17,7 @@ export const useEmbedded = () => {
 };
 
 export const EmbeddedProvider = ({ children }: { children: ReactNode }) => {
-  // 1. Determine the current environment
-  // We check NEXT_PUBLIC_APP_ENV first (e.g. "staging", "production")
-  // Fallback to NODE_ENV (standard Next.js env)
-  const currentEnv = process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV;
-
-  // 2. Logic: If Production -> Embedded. Else -> Not Embedded.
-  const isEmbedded = currentEnv === "production";
+  const isEmbedded = process.env.NEXT_PUBLIC_IS_EMBEDDED === "true";
 
   return (
     <EmbeddedContext.Provider value={{ isEmbedded }}>

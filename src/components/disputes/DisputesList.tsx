@@ -4,6 +4,7 @@ import { DisputeCard } from "./DisputeCard";
 import { BarChartIcon } from "./icons/Icon";
 import { FilterIcon } from "./icons/BadgeIcons";
 import styles from "./DisputesList.module.css";
+import { Plus } from "lucide-react";
 
 export interface Dispute {
   id: string;
@@ -32,8 +33,16 @@ const mockDisputes: Dispute[] = [
     prize: "$5,000",
     userVote: "reject",
     voters: [
-      { name: "Julio Banegas", avatar: "/images/profiles-mockup/profile-1.png", vote: "reject" },
-      { name: "Micaela Descotte", avatar: "/images/profiles-mockup/profile-2.png", vote: "approve" },
+      {
+        name: "Julio Banegas",
+        avatar: "/images/profiles-mockup/profile-1.png",
+        vote: "reject",
+      },
+      {
+        name: "Micaela Descotte",
+        avatar: "/images/profiles-mockup/profile-2.png",
+        vote: "approve",
+      },
     ],
   },
   {
@@ -45,8 +54,16 @@ const mockDisputes: Dispute[] = [
     prize: "$5,000",
     userVote: "reject",
     voters: [
-      { name: "Julio Banegas", avatar: "/images/profiles-mockup/profile-1.png", vote: "reject" },
-      { name: "Micaela Descotte", avatar: "/images/profiles-mockup/profile-2.png", vote: "approve" },
+      {
+        name: "Julio Banegas",
+        avatar: "/images/profiles-mockup/profile-1.png",
+        vote: "reject",
+      },
+      {
+        name: "Micaela Descotte",
+        avatar: "/images/profiles-mockup/profile-2.png",
+        vote: "approve",
+      },
     ],
   },
   {
@@ -58,8 +75,16 @@ const mockDisputes: Dispute[] = [
     prize: "$5,000",
     userVote: "reject",
     voters: [
-      { name: "Julio Banegas", avatar: "/images/profiles-mockup/profile-1.png", vote: "reject" },
-      { name: "Micaela Descotte", avatar: "/images/profiles-mockup/profile-2.png", vote: "approve" },
+      {
+        name: "Julio Banegas",
+        avatar: "/images/profiles-mockup/profile-1.png",
+        vote: "reject",
+      },
+      {
+        name: "Micaela Descotte",
+        avatar: "/images/profiles-mockup/profile-2.png",
+        vote: "approve",
+      },
     ],
   },
 ];
@@ -78,8 +103,16 @@ export const DisputesList: React.FC = () => {
           <div className={styles.icon}>
             <BarChartIcon />
           </div>
-          <h2 className={styles.title}>Mis disputas:</h2>
+          <h2 className={styles.title}>My disputes:</h2>
         </div>
+        <button
+          onClick={() => router.push("/create")}
+          className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+        >
+          <span className="text-xl leading-none mb-1 text-[#1b1c23]">
+            <Plus />
+          </span>
+        </button>
         <button className={styles.filterButton}>
           <span>Add Filter</span>
           <FilterIcon size={12} />
@@ -93,7 +126,7 @@ export const DisputesList: React.FC = () => {
       </div>
 
       <button className={styles.justiceButton} onClick={handleJusticeClick}>
-        Hacer justicia
+        Make Justice
       </button>
     </div>
   );
