@@ -1,4 +1,4 @@
-import XOConnectButton from "@/components/XOConnectButton";
+import XOConnectButton from "@/components/ConnectButton";
 
 export default function Home() {
   return (

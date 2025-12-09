@@ -2,15 +2,23 @@
 
 import React, { useState } from "react";
 import { useXOContracts } from "@/providers/XOContractsProvider";
+import { useEmbedded } from "@/providers/EmbeddedProvider";
 import { toast } from "sonner";
 import { Loader2, Copy, Check, Wallet, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const XOConnectButton = () => {
+  const { isEmbedded } = useEmbedded();
   const { connect, address } = useXOContracts();
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // 1. Web Mode: Use Standard AppKit UI
+  if (!isEmbedded) {
+    return <appkit-button />;
+  }
+
+  // 2. Embedded Mode: Use Custom UI Logic
   const handleConnect = async () => {
     setIsLoading(true);
     try {
@@ -35,7 +43,7 @@ const XOConnectButton = () => {
     ? `${address.slice(0, 5)}...${address.slice(-4)}`
     : "";
 
-  // 1. Connected State
+  // Embedded Connected State
   if (address) {
     return (
       <div className="flex items-center gap-3">
@@ -105,7 +113,7 @@ const XOConnectButton = () => {
     );
   }
 
-  // 2. Disconnected State
+  // Embedded Disconnected State
   return (
     <Button
       onClick={handleConnect}

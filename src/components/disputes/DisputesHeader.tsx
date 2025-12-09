@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "./DisputesHeader.module.css";
-import XOConnectButton from "../XOConnectButton";
+import ConnectButton from "../ConnectButton";
 // import { SimpleWalletButton } from "../SimpleWalletButton";
 
 export const DisputesHeader: React.FC = () => {
@@ -12,7 +12,7 @@ export const DisputesHeader: React.FC = () => {
         className={styles.headerImage}
       />
       {/*<SimpleWalletButton />*/}
-      <XOConnectButton />
+      <ConnectButton />
     </div>
   );
 };
