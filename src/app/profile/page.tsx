@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -13,12 +13,11 @@ import {
   Hash,
 } from "lucide-react";
 import ConnectButton from "@/components/ConnectButton";
-import { useXOContracts } from "@/providers/XOContractsProvider";
 import { useSliceContract } from "@/hooks/useSliceContract";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { address } = useXOContracts();
+  // const { address } = useXOContracts();
   const contract = useSliceContract();
 
   // State for the "Test Tools" input
@@ -27,11 +26,10 @@ export default function ProfilePage() {
   const [loadingLatest, setLoadingLatest] = useState(false);
 
   // Fetch the latest dispute count when contract is ready
-  const fetchLatestId = async () => {
+  const fetchLatestId = useCallback(async () => {
     if (!contract) return;
     setLoadingLatest(true);
     try {
-      // disputeCount() returns the total number of disputes created
       const count = await contract.disputeCount();
       setLatestDisputeId(Number(count));
     } catch (error) {
@@ -39,12 +37,12 @@ export default function ProfilePage() {
     } finally {
       setLoadingLatest(false);
     }
-  };
+  }, [contract]); // 3. Add dependencies 'contract' needs here
 
+  // 4. Now you can safely add it to useEffect
   useEffect(() => {
     void fetchLatestId();
-  }, [contract]);
-
+  }, [fetchLatestId]);
   const handleNavigation = (path: string) => {
     if (path.includes("[id]")) {
       if (!targetDisputeId) return;
@@ -78,7 +76,7 @@ export default function ProfilePage() {
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
         {/* --- Profile Card --- */}
-        <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col items-center gap-4">
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center gap-4">
           <div className="relative">
             <div className="w-20 h-20 rounded-full bg-[#f5f6f9] overflow-hidden border-4 border-white shadow-lg">
               <img
