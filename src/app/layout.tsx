@@ -10,7 +10,10 @@ import { TimerProvider } from "@/contexts/TimerContext";
 
 export const metadata: Metadata = {
   title: "Slice",
-  description: "Earn funds while solving disputes",
+  description: "Get paid for doing justice", // Updated description text
+  icons: {
+    icon: "/images/slice-logo-light.svg",
+  },
 };
 
 const geistSans = Geist({

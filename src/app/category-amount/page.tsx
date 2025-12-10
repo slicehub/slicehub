@@ -49,7 +49,7 @@ export default function CategoryAmountPage() {
 
       <div className="mt-auto flex justify-center pb-8">
         <SwipeButton onSwipeComplete={handleSwipeComplete}>
-          Swipe to find disputes
+          Find disputes
         </SwipeButton>
       </div>
     </div>
