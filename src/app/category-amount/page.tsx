@@ -9,7 +9,7 @@ import { SwipeButton } from "@/components/category-amount/SwipeButton";
 
 export default function CategoryAmountPage() {
   const router = useRouter();
-  const [selectedAmount, setSelectedAmount] = React.useState<number>(20);
+  const [selectedAmount, setSelectedAmount] = React.useState<number>(1);
 
   const handleBack = () => router.back();
 

@@ -9,30 +9,29 @@ import { TimerCard } from "@/components/dispute-overview/TimerCard";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { useXOContracts } from "@/providers/XOContractsProvider";
-import { ArrowRight, RefreshCw } from "lucide-react"; // Import RefreshCw
+import { ArrowRight, RefreshCw, Eye } from "lucide-react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { toast } from "sonner";
+
+// Status definitions
+const STATUS_COMMIT = 1;
+const STATUS_REVEAL = 2;
 
 export default function VotePage() {
   const router = useRouter();
   const { address } = useXOContracts();
 
   const [selectedVote, setSelectedVote] = useState<number | null>(null);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false); // State for refresh animation
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [hasCommittedLocally, setHasCommittedLocally] = useState(false);
 
-  // 1. Get Dispute ID from URL
   const params = useParams();
   const disputeId = (params?.id as string) || "1";
 
-  // 2. Fetch Dispute State
   const { dispute, refetch } = useGetDispute(disputeId);
-  const { commitVote, revealVote, isProcessing, logs } = useSliceVoting();
+  const { commitVote, isProcessing, logs } = useSliceVoting();
 
   const handleBack = () => {
     router.back();
@@ -40,58 +39,67 @@ export default function VotePage() {
 
   const { handlers } = useSwipeGesture({
     onSwipeRight: () => {
-      // Swipe Right -> Go back to Defendant Evidence
       router.push(`/defendant-evidence/${disputeId}`);
     },
-    // onSwipeLeft is undefined because there is no page to the right of "Vote"
   });
 
+  // Load vote from local storage if available
   useEffect(() => {
     if (typeof window !== "undefined" && address) {
       const stored = localStorage.getItem(`slice_vote_${disputeId}_${address}`);
       if (stored) {
-        setHasCommittedLocally(true);
+        try {
+          const parsed = JSON.parse(stored);
+          setHasCommittedLocally(true);
+          // Set the previously selected vote so it stays highlighted
+          setSelectedVote(parsed.vote);
+        } catch (error) {
+          console.error("Failed to parse local vote data:", error);
+        }
       }
     }
-  }, [address, disputeId]); // Dependencies
+  }, [address, disputeId]);
 
   const handleVoteSelect = (vote: number) => {
+    // Prevent changing selection if already committed
+    if (hasCommittedLocally) return;
     setSelectedVote(vote);
-    setMessage(null);
   };
 
   const handleCommit = async () => {
     if (selectedVote === null) return;
     const success = await commitVote(disputeId, selectedVote);
     if (success) {
-      setHasCommittedLocally(true); // Update local state immediately
-      setMessage({
-        type: "success",
-        text: "Vote committed! Refreshing status...",
-      });
-      // Automatically refetch to see if we moved to reveal phase
-      await handleRefresh(); 
+      setHasCommittedLocally(true);
+      toast.success("Vote committed! Refreshing status...");
+      await handleRefresh();
     }
   };
 
-  const handleReveal = async () => {
-    const success = await revealVote(disputeId);
-    if (success) setShowSuccessAnimation(true);
-  };
-
-  // Manual Refresh Handler
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await refetch();
-    setTimeout(() => setIsRefreshing(false), 1000); // Minimum spin time for UX
+    setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  const isRevealPhase = dispute?.status === 2;
+  const currentStatus = dispute?.status;
+  const isRevealPhase = currentStatus === STATUS_REVEAL;
+  const isCommitPhase = currentStatus === STATUS_COMMIT;
 
   const handleAnimationComplete = () => {
     setShowSuccessAnimation(false);
     router.push("/");
   };
+
+  // Commit is disabled if: processing, nothing selected, already committed, or wrong phase
+  const isCommitDisabled =
+    isProcessing ||
+    selectedVote === null ||
+    hasCommittedLocally ||
+    !isCommitPhase;
+
+  // Reveal nav is disabled if: not in reveal phase
+  const isRevealDisabled = !isRevealPhase;
 
   return (
     <div className="flex flex-col h-screen bg-gray-50" {...handlers}>
@@ -100,9 +108,7 @@ export default function VotePage() {
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center mb-2">
-            <h2 className="text-xl font-bold">Vote</h2>
-            
-            {/* Refresh Button */}
+            <h2 className="text-xl font-bold text-[#1b1c23]">Vote</h2>
             <button
               onClick={() => void handleRefresh()}
               disabled={isRefreshing || isProcessing}
@@ -116,121 +122,118 @@ export default function VotePage() {
           </div>
 
           <div className="flex flex-col gap-3">
+            {/* Claimant Button */}
             <button
-              className={`w-full p-4 rounded-lg border bg-white hover:bg-gray-50 transition-colors text-left ${
+              className={`w-full p-4 rounded-xl border bg-white transition-all text-left group ${
                 selectedVote === 1
-                  ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-                  : "border-gray-200"
-              }`}
+                  ? "border-[#1b1c23] ring-1 ring-[#1b1c23] shadow-md"
+                  : "border-gray-100 hover:border-[#1b1c23]/50 shadow-sm"
+              } ${hasCommittedLocally && selectedVote !== 1 ? "opacity-50 grayscale" : ""}`}
               onClick={() => handleVoteSelect(1)}
-              disabled={isProcessing || isRevealPhase}
+              disabled={hasCommittedLocally} // Always disable interaction after commit
             >
               <div className="flex flex-col">
                 <div className="flex justify-between items-center">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 uppercase font-semibold">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                       Claimant
                     </span>
-                    <span className="text-lg font-medium">Julio Banegas</span>
+                    <span className="text-base font-bold text-[#1b1c23]">
+                      Julio Banegas
+                    </span>
                   </div>
-                  <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-mono">
+                  {/* Vote ID Style */}
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                      selectedVote === 1
+                        ? "bg-[#1b1c23] text-white"
+                        : "bg-[#f5f6f9] text-gray-400 group-hover:bg-[#1b1c23]/10"
+                    }`}
+                  >
                     1
-                  </span>
+                  </div>
                 </div>
               </div>
             </button>
 
+            {/* Defendant Button */}
             <button
-              className={`w-full p-4 rounded-lg border bg-white hover:bg-gray-50 transition-colors text-left ${
+              className={`w-full p-4 rounded-xl border bg-white transition-all text-left group ${
                 selectedVote === 0
-                  ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-                  : "border-gray-200"
-              }`}
+                  ? "border-[#1b1c23] ring-1 ring-[#1b1c23] shadow-md"
+                  : "border-gray-100 hover:border-[#1b1c23]/50 shadow-sm"
+              } ${hasCommittedLocally && selectedVote !== 0 ? "opacity-50 grayscale" : ""}`}
               onClick={() => handleVoteSelect(0)}
-              disabled={isProcessing || isRevealPhase}
+              disabled={hasCommittedLocally} // Always disable interaction after commit
             >
               <div className="flex flex-col">
                 <div className="flex justify-between items-center">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 uppercase font-semibold">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                       Defendant
                     </span>
-                    <span className="text-lg font-medium">
+                    <span className="text-base font-bold text-[#1b1c23]">
                       Micaela Descotte
                     </span>
                   </div>
-                  <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-mono">
+                  {/* Vote ID Style */}
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                      selectedVote === 0
+                        ? "bg-[#1b1c23] text-white"
+                        : "bg-[#f5f6f9] text-gray-400 group-hover:bg-[#1b1c23]/10"
+                    }`}
+                  >
                     0
-                  </span>
+                  </div>
                 </div>
               </div>
             </button>
           </div>
 
-          {message && (
-            <div
-              className={`p-3 rounded-md text-sm ${
-                message.type === "success"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
-
           {isProcessing && (
-            <div
-              style={{
-                padding: "10px",
-                background: "#f3f4f6",
-                fontSize: "10px",
-                marginBottom: "10px",
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {logs || "Initializing..."}
+            <div className="p-3 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-mono text-gray-500 whitespace-pre-wrap animate-pulse">
+              {logs || "Processing transaction..."}
             </div>
           )}
 
-          {isRevealPhase ? (
-            <div className="flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-300">
-               <div className="bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg text-sm text-center font-bold">
-                  Reveal Phase Open!
-               </div>
-               <button
-                className="w-full py-3 px-4 bg-primary text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => void handleReveal()}
-                disabled={isProcessing || !hasCommittedLocally}
-              >
-                {isProcessing ? "Revealing..." : "Reveal My Vote"}
-              </button>
-            </div>
-          ) : (
+          <div className="mt-4 flex flex-col gap-3">
+            {/* 1. Commit Button */}
             <button
-              className="w-full py-3 px-4 bg-primary text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+              className={`
+                w-full py-4 px-4 rounded-xl font-bold text-sm transition-all
+                flex items-center justify-center gap-2
+                ${
+                  isCommitDisabled
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-[#1b1c23] text-white hover:bg-[#2c2d33] shadow-lg active:scale-[0.98]"
+                }
+              `}
               onClick={() => void handleCommit()}
-              disabled={isProcessing || selectedVote === null || hasCommittedLocally}
+              disabled={isCommitDisabled}
             >
-              {isProcessing ? "Committing..." : hasCommittedLocally ? "Vote Committed (Wait for Reveal)" : "Commit Vote"}
+              {isProcessing ? "Processing..." : "Commit Vote"}
             </button>
-          )}
 
-          {hasCommittedLocally && !isRevealPhase && (
-             <p className="text-xs text-center text-gray-500 mt-2">
-                Vote committed. You can refresh to check if the reveal phase has started.
-             </p>
-          )}
-
-          {hasCommittedLocally && (
+            {/* 2. Reveal Navigation Button */}
             <button
               onClick={() => router.push(`/reveal/${disputeId}`)}
-              className="mt-4 w-full py-3 px-4 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold text-sm hover:bg-gray-50 flex items-center justify-center gap-2"
+              disabled={isRevealDisabled}
+              className={`
+                  w-full py-4 px-4 rounded-xl font-bold text-sm transition-all
+                  flex items-center justify-center gap-2
+                  ${
+                    isRevealDisabled
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-[#1b1c23] text-white hover:bg-[#2c2d33] shadow-lg active:scale-[0.98]"
+                  }
+                `}
             >
+              <Eye className="w-4 h-4" />
               <span>Go to Reveal Page</span>
-              <ArrowRight className="w-4 h-4" />
+              {!isRevealDisabled && <ArrowRight className="w-4 h-4 ml-auto" />}
             </button>
-          )}
+          </div>
         </div>
       </div>
       <PaginationDots currentIndex={3} total={4} />
