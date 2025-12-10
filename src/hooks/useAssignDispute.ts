@@ -4,6 +4,7 @@ import { useXOContracts } from "@/providers/XOContractsProvider";
 import { parseEther } from "ethers";
 import { toast } from "sonner";
 
+// Note: saves the dispute we join to local storage
 export function useAssignDispute() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFinding, setIsFinding] = useState(false);
@@ -88,6 +89,15 @@ export function useAssignDispute() {
 
       toast.info("Transaction sent...");
       await tx.wait();
+
+      // Save Joined Status Locally
+      // We use a Set-like structure in localStorage to track joined IDs
+      const storageKey = `slice_joined_disputes_${address}`;
+      const existing = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      if (!existing.includes(disputeId)) {
+        existing.push(disputeId);
+        localStorage.setItem(storageKey, JSON.stringify(existing));
+      }
 
       toast.success(`Successfully joined Dispute #${disputeId}!`);
       return true;
