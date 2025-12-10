@@ -117,9 +117,6 @@ export default function RevealPage() {
           <div className="flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-300">
             <div className="flex justify-between items-center mb-2">
               <h2 className="text-xl font-bold">Reveal Vote</h2>
-              <span className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold border border-green-200 shadow-sm animate-pulse">
-                WINDOW OPEN
-              </span>
             </div>
 
             {!hasLocalData && (
