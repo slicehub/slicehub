@@ -14,7 +14,7 @@ export const InfoCard: React.FC = () => {
         </div>
       </div>
       <p className={styles.message}>
-        Ten en cuenta que una vez comiences la disputa el dinero se liberará y no podrás recuperarlo
+        Once you start a dispute, funds will be released and cannot be recovered
       </p>
     </div>
   );

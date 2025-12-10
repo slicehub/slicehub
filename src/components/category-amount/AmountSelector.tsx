@@ -6,7 +6,7 @@ interface AmountSelectorProps {
   onAmountChange: (amount: number) => void;
 }
 
-const AMOUNTS = [1, 5, 10, 15, 20, 25, 50, 75, 100];
+const AMOUNTS = [1, 25, 50, 75, 100];
 
 export const AmountSelector: React.FC<AmountSelectorProps> = ({
   selectedAmount,
@@ -26,19 +26,19 @@ export const AmountSelector: React.FC<AmountSelectorProps> = ({
 
   return (
     <div className={styles.container}>
-      <div 
+      <div
         className={styles.selectedLabel}
-        style={{ 
+        style={{
           left: `${position}%`,
-          transform: "translateX(-50%)"
+          transform: "translateX(-50%)",
         }}
       >
         <span>{selectedAmount} USD</span>
       </div>
-      
+
       <div className={styles.sliderContainer}>
         <div className={styles.sliderTrack}>
-          <div 
+          <div
             className={styles.sliderFill}
             style={{ width: `${position}%` }}
           />
@@ -54,12 +54,12 @@ export const AmountSelector: React.FC<AmountSelectorProps> = ({
           }}
           className={styles.sliderInput}
         />
-        <div 
+        <div
           className={styles.sliderHandle}
           style={{ left: `calc(${position}% - 7px)` }}
         />
       </div>
-      
+
       <div className={styles.amountLabels}>
         {AMOUNTS.map((amount) => (
           <button
@@ -80,4 +80,3 @@ export const AmountSelector: React.FC<AmountSelectorProps> = ({
     </div>
   );
 };
-
