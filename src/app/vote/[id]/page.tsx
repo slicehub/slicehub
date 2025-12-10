@@ -9,7 +9,7 @@ import { TimerCard } from "@/components/dispute-overview/TimerCard";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { useXOContracts } from "@/providers/XOContractsProvider";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, RefreshCw } from "lucide-react"; // Import RefreshCw
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 export default function VotePage() {
@@ -22,6 +22,7 @@ export default function VotePage() {
     text: string;
   } | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false); // State for refresh animation
 
   const [hasCommittedLocally, setHasCommittedLocally] = useState(false);
 
@@ -63,17 +64,26 @@ export default function VotePage() {
     if (selectedVote === null) return;
     const success = await commitVote(disputeId, selectedVote);
     if (success) {
-      await refetch();
+      setHasCommittedLocally(true); // Update local state immediately
       setMessage({
         type: "success",
-        text: "Vote committed! You can now proceed to the Reveal Page.",
+        text: "Vote committed! Refreshing status...",
       });
+      // Automatically refetch to see if we moved to reveal phase
+      await handleRefresh(); 
     }
   };
 
   const handleReveal = async () => {
     const success = await revealVote(disputeId);
     if (success) setShowSuccessAnimation(true);
+  };
+
+  // Manual Refresh Handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setTimeout(() => setIsRefreshing(false), 1000); // Minimum spin time for UX
   };
 
   const isRevealPhase = dispute?.status === 2;
@@ -89,7 +99,22 @@ export default function VotePage() {
       <TimerCard />
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex flex-col gap-4">
-          <h2 className="text-xl font-bold mb-4">Vote</h2>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-xl font-bold">Vote</h2>
+            
+            {/* Refresh Button */}
+            <button
+              onClick={() => void handleRefresh()}
+              disabled={isRefreshing || isProcessing}
+              className="p-2 rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-[#8c8fff]"
+              title="Check Status"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </button>
+          </div>
+
           <div className="flex flex-col gap-3">
             <button
               className={`w-full p-4 rounded-lg border bg-white hover:bg-gray-50 transition-colors text-left ${
@@ -169,21 +194,32 @@ export default function VotePage() {
           )}
 
           {isRevealPhase ? (
-            <button
-              className="w-full py-3 px-4 bg-primary text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed mt-4"
-              onClick={() => void handleReveal()}
-              disabled={isProcessing || !hasCommittedLocally}
-            >
-              {isProcessing ? "Revealing..." : "Reveal My Vote"}
-            </button>
+            <div className="flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-300">
+               <div className="bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg text-sm text-center font-bold">
+                  Reveal Phase Open!
+               </div>
+               <button
+                className="w-full py-3 px-4 bg-primary text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => void handleReveal()}
+                disabled={isProcessing || !hasCommittedLocally}
+              >
+                {isProcessing ? "Revealing..." : "Reveal My Vote"}
+              </button>
+            </div>
           ) : (
             <button
               className="w-full py-3 px-4 bg-primary text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed mt-4"
               onClick={() => void handleCommit()}
-              disabled={isProcessing || selectedVote === null}
+              disabled={isProcessing || selectedVote === null || hasCommittedLocally}
             >
-              {isProcessing ? "Committing..." : "Commit Vote"}
+              {isProcessing ? "Committing..." : hasCommittedLocally ? "Vote Committed (Wait for Reveal)" : "Commit Vote"}
             </button>
+          )}
+
+          {hasCommittedLocally && !isRevealPhase && (
+             <p className="text-xs text-center text-gray-500 mt-2">
+                Vote committed. You can refresh to check if the reveal phase has started.
+             </p>
           )}
 
           {hasCommittedLocally && (
