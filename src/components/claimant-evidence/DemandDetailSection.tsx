@@ -8,10 +8,8 @@ interface DemandDetailSectionProps {
 export const DemandDetailSection: React.FC<DemandDetailSectionProps> = ({ detail }) => {
   return (
     <div className={styles.section}>
-      <h3 className={styles.title}>Detalle de la demanda</h3>
+      <h3 className={styles.title}>Claim Details</h3>
       <p className={styles.text}>{detail}</p>
     </div>
   );
 };
-
-

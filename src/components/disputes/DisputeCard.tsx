@@ -8,6 +8,14 @@ interface DisputeCardProps {
   dispute: Dispute;
 }
 
+
+const getIconByCategory = (category: string) => {
+  const cat = (category || "").toLowerCase();
+  if (cat.includes("tech")) return "/images/icons/bar-chart-icon.svg";
+  if (cat.includes("freelance")) return "/images/icons/person-icon.svg";
+  return "/images/icons/stellar-fund-icon.svg";
+};
+
 export const DisputeCard: React.FC<DisputeCardProps> = ({ dispute }) => {
   return (
     <div className="bg-white rounded-[18px] shadow-[0px_2px_4px_0px_rgba(27,28,35,0.1)] p-[22px] relative w-full h-[261px] flex flex-col justify-between box-border shrink-0">
@@ -22,38 +30,12 @@ export const DisputeCard: React.FC<DisputeCardProps> = ({ dispute }) => {
               className="w-full h-full rounded-[14px] object-cover"
             />
           ) : (
-            <div className="w-full h-full rounded-[14px] bg-[#f5f6f9] flex items-center justify-center">
-              {/* Default Icons logic */}
-              {dispute.id === "1" ? (
-                <img
-                  src="/images/icons/stellar-fund-icon.svg"
-                  alt="Stellar Community Fund"
-                  className="w-full h-full"
-                />
-              ) : dispute.id === "2" ? (
-                <img
-                  src="/images/icons/ethereum-icon.png"
-                  alt="Ethereum Foundation"
-                  className="w-full h-full object-cover rounded-[14px]"
-                />
-              ) : dispute.id === "3" ? (
-                <img
-                  src="/images/icons/lionstar-icon.png"
-                  alt="Lionstar"
-                  className="w-full h-full object-cover rounded-[14px]"
-                />
-              ) : (
-                <svg width="55" height="55" viewBox="0 0 55 55" fill="none">
-                  <rect width="55" height="55" rx="14" fill="#f5f6f9" />
-                  <path
-                    d="M27.5 18L37.5 28L27.5 38L17.5 28L27.5 18Z"
-                    stroke="#8c8fff"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
+            <div className="w-full h-full rounded-[14px] bg-[#f5f6f9] flex items-center justify-center p-1">
+              <img
+                src={getIconByCategory(dispute.category)}
+                alt={dispute.category}
+                className="w-full h-full object-contain"
+              />
             </div>
           )}
         </div>

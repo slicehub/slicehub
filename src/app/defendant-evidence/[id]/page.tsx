@@ -2,6 +2,7 @@
 
 import React, { useRef, useCallback, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useGetDispute } from "@/hooks/useGetDispute";
 import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 import { DeadlineCard } from "@/components/dispute-overview/DeadlineCard";
 import { ClaimantInfoCard } from "@/components/claimant-evidence/ClaimantInfoCard";
@@ -149,8 +150,7 @@ export default function DefendantEvidencePage() {
     avatar: "/images/profiles-mockup/profile-2.png",
   };
 
-  const demandDetail =
-    "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.";
+  const demandDetail = "The delivered application crashes immediately on launch on both iOS and Android simulators. The contract explicitly stated a 'fully functional MVP'. I have provided crash logs and screen recordings demonstrating that the app is currently unusable. I cannot release funds for non-functional software.";
 
   // Images for the top carousel (after the demand detail)
   const topCarouselImages = [
@@ -171,36 +171,24 @@ export default function DefendantEvidencePage() {
     },
   ];
 
-  const imageEvidenceList = [
-    {
-      id: "1",
-      type: "image" as const,
-      url: "/images/category-amount/evidencia-1.png",
-      description:
-        "Lorem Ipsum is simply dummy text of the printing and typesing industry. Lorem Ipsum has been the industry's standard dummy text ever since the",
-      uploadDate: "10/08/2026",
-    },
-    {
-      id: "2",
-      type: "image" as const,
-      url: "/images/category-amount/evidencia-2.png",
-      description:
-        "Lorem Ipsum is simply dummy text of the printing and typesing industry. Lorem Ipsum has been the industry's standard dummy text ever since the",
-      uploadDate: "11/08/2026",
-    },
-  ];
+  const { dispute } = useGetDispute(disputeId);
 
-  const videoEvidenceList = [
-    {
-      id: "v1",
-      type: "video" as const,
-      url: "/animations/money.mp4",
-      thumbnail: "/images/category-amount/evidencia-video.png",
-      description:
-        "Lorem Ipsum is simply dummy text of the printing and typesing industry. Lorem Ipsum has been the industry's standard dummy text ever since the",
-      uploadDate: "10/08/2026",
-    },
-  ];
+  const dynamicEvidence = (dispute?.evidence || []).map((url: string, index: number) => ({
+    id: `evidence-${index}`,
+    type: url.endsWith('.mp4') ? ('video' as const) : ('image' as const),
+    url: url,
+    description: "Evidence submitted via IPFS",
+    uploadDate: "Recently",
+    thumbnail: url.endsWith('.mp4') ? "/images/category-amount/evidencia-video.png" : undefined
+  }));
+
+  const imageEvidenceList = dynamicEvidence
+    .filter((e) => e.type === 'image')
+    .map(e => ({...e, type: 'image' as const}));
+
+  const videoEvidenceList = dynamicEvidence
+    .filter((e) => e.type === 'video')
+    .map(e => ({...e, type: 'video' as const}));
 
   const audioEvidence = {
     id: "a1",

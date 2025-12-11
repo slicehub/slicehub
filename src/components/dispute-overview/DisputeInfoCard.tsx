@@ -84,21 +84,21 @@ export const DisputeInfoCard: React.FC<DisputeInfoCardProps> = ({ dispute }) => 
 
       {/* General Context */}
       <div className={styles.contextSection}>
-        <h3 className={styles.contextTitle}>Contexto General:</h3>
+        <h3 className={styles.contextTitle}>General Context:</h3>
         <p className={styles.contextText}>{dispute.generalContext}</p>
       </div>
 
       {/* Dates */}
       <div className={styles.datesSection}>
         <div className={styles.dateItem}>
-          <div className={styles.dateLabel}>Fecha de creación</div>
+          <div className={styles.dateLabel}>Creation Date</div>
           <div className={styles.dateBadge}>
             <CalendarIcon size={10} color="#8c8fff" className={styles.calendarIcon} />
             {dispute.creationDate}
           </div>
         </div>
         <div className={styles.dateItem}>
-          <div className={styles.dateLabel}>Deadline máximo</div>
+          <div className={styles.dateLabel}>Max Deadline</div>
           <div className={styles.dateBadge}>
             <CalendarIcon size={10} color="#8c8fff" className={styles.calendarIcon} />
             {dispute.deadline}
@@ -108,4 +108,3 @@ export const DisputeInfoCard: React.FC<DisputeInfoCardProps> = ({ dispute }) => 
     </div>
   );
 };
-

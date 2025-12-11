@@ -9,7 +9,7 @@ interface DeadlineCardProps {
 export const DeadlineCard: React.FC<DeadlineCardProps> = ({ deadline }) => {
   return (
     <div className={styles.card}>
-      <span className={styles.label}>Fecha límite de resolución:</span>
+      <span className={styles.label}>Resolution Deadline:</span>
       <div className={styles.dateContainer}>
         <CalendarIcon size={10} color="#1b1c23" />
         <span className={styles.date}>{deadline}</span>
@@ -17,5 +17,3 @@ export const DeadlineCard: React.FC<DeadlineCardProps> = ({ deadline }) => {
     </div>
   );
 };
-
-

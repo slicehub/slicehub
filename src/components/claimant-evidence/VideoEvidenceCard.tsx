@@ -41,10 +41,8 @@ export const VideoEvidenceCard: React.FC<VideoEvidenceCardProps> = ({ evidence }
       <p className={styles.description}>{evidence.description}</p>
       <div className={styles.dateBadge}>
         <CalendarIcon size={10} color="#31353b" />
-        <span>Video tomado el: {evidence.uploadDate}</span>
+        <span>Video recorded on: {evidence.uploadDate}</span>
       </div>
     </div>
   );
 };
-
-

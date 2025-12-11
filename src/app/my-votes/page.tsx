@@ -227,7 +227,7 @@ export default function MyVotesPage() {
               </div>
             </div>
 
-            <h3 className="font-extrabold text-sm text-[#1b1c23] uppercase tracking-wide ml-1 mt-2">
+            <h3 className="font-extrabold  text-[#1b1c23] uppercase tracking-wide ml-1 mt-2">
               Your Tasks
             </h3>
 
@@ -266,7 +266,7 @@ export default function MyVotesPage() {
                         {task.icon}
                       </div>
                       <div>
-                        <h4 className="font-extrabold text-[#1b1c23] text-sm leading-tight">
+                        <h4 className="font-extrabold text-[#1b1c23] leading-tight">
                           {task.title}
                         </h4>
                         <span className="text-xs font-bold text-gray-400">

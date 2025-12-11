@@ -32,9 +32,8 @@ export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence }) => {
       <p className={styles.description}>{evidence.description}</p>
       <div className={styles.dateBadge}>
         <CalendarIcon size={10} color="#31353b" />
-        <span>Foto tomada el: {evidence.uploadDate}</span>
+        <span>Photo taken on: {evidence.uploadDate}</span>
       </div>
     </div>
   );
 };
-

@@ -130,7 +130,7 @@ export default function CreateDisputePage() {
           <div className="flex flex-col gap-2">
             <label className="font-semibold text-[#1b1c23] flex justify-between">
               <span>Jurors Needed</span>
-              <span className="text-[#8c8fff] font-normal">
+              <span className="text-[#8c8fff] font-normal text-xs">
                 {jurorsRequired} Jurors
               </span>
             </label>
