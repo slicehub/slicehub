@@ -28,15 +28,31 @@ export function usePayDispute() {
       // If using standard USDC:
       const amountToApprove = parseUnits(amountStr, 6);
 
-      console.log(`Approving ${amountStr} USDC...`);
-      toast.info("Step 1/2: Approving USDC...");
+      // 1. Check existing allowance first
+      const currentAllowance = await usdcContract.allowance(address, sliceAddress);
 
-      // 3. Approve Slice Contract to spend User's USDC
-      const approveTx = await usdcContract.approve(sliceAddress, amountToApprove);
-      await approveTx.wait();
+      if (currentAllowance < amountToApprove) {
+        console.log(`Current allowance ${currentAllowance} is insufficient. Approving...`);
+        toast.info("Step 1/2: Approving USDC...");
 
-      toast.success("Approval successful! Proceeding to payment...");
-      console.log("Approval confirmed:", approveTx.hash);
+        const approveTx = await usdcContract.approve(sliceAddress, amountToApprove);
+        await approveTx.wait();
+
+        toast.success("Approval confirmed. Verifying...");
+
+        // 2. Poll until the allowance is actually reflected on-chain (Fixes RPC Latency)
+        let retries = 0;
+        while (retries < 5) {
+            const updatedAllowance = await usdcContract.allowance(address, sliceAddress);
+            if (updatedAllowance >= amountToApprove) break;
+
+            console.log("Waiting for RPC to index allowance...");
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s
+            retries++;
+        }
+      } else {
+        console.log("Allowance already sufficient. Skipping approval.");
+      }
 
       // 4. Call payDispute (No value needed now)
       toast.info("Step 2/2: Confirming Payment...");
