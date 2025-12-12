@@ -6,12 +6,13 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useRef,
+  useCallback,
 } from "react";
 import { toast } from "sonner";
 import { BrowserProvider, Signer } from "ethers";
 import { useEmbedded } from "./EmbeddedProvider";
-import { settings } from "@/util/config"; // Your dynamic config
-// Wagmi & Reown Imports
+import { settings } from "@/util/config";
 import { useWalletClient, useDisconnect } from "wagmi";
 import { useAppKit } from "@reown/appkit/react";
 import { walletClientToSigner } from "@/util/ethers-adapter";
@@ -25,6 +26,7 @@ interface XOContractsContextType {
   disconnect: () => Promise<void>;
   address: string | null;
   signer: Signer | null;
+  isConnecting: boolean; // Useful for UI loading states
 }
 
 const XOContractsContext = createContext<XOContractsContextType | null>(null);
@@ -32,50 +34,69 @@ const XOContractsContext = createContext<XOContractsContextType | null>(null);
 export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
   const { isEmbedded } = useEmbedded();
 
-  // --- Global State (Exposed to app) ---
+  // --- Global State ---
   const [activeAddress, setActiveAddress] = useState<string | null>(null);
   const [activeSigner, setActiveSigner] = useState<Signer | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   // --- Embedded State (XO) ---
-  // We keep XO state local to this provider to switch cleanly
   const [xoAddress, setXoAddress] = useState<string | null>(null);
   const [xoSigner, setXoSigner] = useState<Signer | null>(null);
+  const initializationAttempted = useRef(false); // Prevent double-run in Strict Mode
 
-  // --- Web/Wagmi State (Reown) ---
+  // --- Web/Wagmi State ---
   const { data: walletClient } = useWalletClient();
   const { disconnect: wagmiDisconnect } = useDisconnect();
-  const { open } = useAppKit(); // Triggers the Reown Modal
+  const { open } = useAppKit();
 
-  // Get active chain config (Testnet vs Mainnet)
   const activeChain = settings.chain.supportedChains[0];
 
-  // 1. XO Connection Logic (Embedded)
-  const connectXO = async () => {
-    try {
-      const { XOConnectProvider } = await import("xo-connect");
+  // 1. XO Connection Logic
+  // Added 'silent' parameter to suppress toasts on auto-connect
+  const connectXO = useCallback(
+    async (silent = false) => {
+      setIsConnecting(true);
+      try {
+        const { XOConnectProvider } = await import("xo-connect");
 
-      const provider: Provider = new XOConnectProvider({
-        rpcs: { [activeChain.chainId]: activeChain.rpcUrls[0] },
-        defaultChainId: activeChain.chainId,
-      });
+        const provider: Provider = new XOConnectProvider({
+          rpcs: { [activeChain.chainId]: activeChain.rpcUrls[0] },
+          defaultChainId: activeChain.chainId,
+        });
 
-      await provider.request({ method: "eth_requestAccounts" });
+        await provider.request({ method: "eth_requestAccounts" });
 
-      const ethersProvider = new BrowserProvider(provider);
-      const newSigner = await ethersProvider.getSigner();
-      const addr = await newSigner.getAddress();
+        const ethersProvider = new BrowserProvider(provider);
+        const newSigner = await ethersProvider.getSigner();
+        const addr = await newSigner.getAddress();
 
-      setXoSigner(newSigner);
-      setXoAddress(addr);
-      toast.success(`Connected via XO`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to connect XO");
+        setXoSigner(newSigner);
+        setXoAddress(addr);
+
+        if (!silent) {
+          toast.success(`Connected via XO`);
+        }
+      } catch (err) {
+        console.error("XO Connection Failed:", err);
+        if (!silent) {
+          toast.error("Failed to connect XO");
+        }
+      } finally {
+        setIsConnecting(false);
+      }
+    },
+    [activeChain],
+  );
+
+  // 2. AUTO-CONNECT EFFECT (The Fix)
+  useEffect(() => {
+    if (isEmbedded && !xoAddress && !initializationAttempted.current) {
+      initializationAttempted.current = true;
+      connectXO(true);
     }
-  };
+  }, [isEmbedded, xoAddress, connectXO]);
 
-  // 2. Wagmi/Reown Logic (Web)
-  // This Effect listens for Wagmi connection changes automatically
+  // 3. Wagmi/Reown Logic (Web)
   useEffect(() => {
     if (!isEmbedded && walletClient) {
       const signer = walletClientToSigner(walletClient);
@@ -87,8 +108,7 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [walletClient, isEmbedded]);
 
-  // 3. Sync Logic for Embedded
-  // If we are embedded, we sync the XO state to the active state
+  // 4. Sync Logic for Embedded
   useEffect(() => {
     if (isEmbedded) {
       setActiveSigner(xoSigner);
@@ -97,12 +117,10 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
   }, [xoSigner, xoAddress, isEmbedded]);
 
   // --- Public Interface ---
-
   const connect = async () => {
     if (isEmbedded) {
-      await connectXO();
+      await connectXO(false);
     } else {
-      // If web, just open the modal. The useEffect above handles the rest.
       await open();
     }
   };
@@ -111,6 +129,8 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
     if (isEmbedded) {
       setXoAddress(null);
       setXoSigner(null);
+      // Optional: Reset initialization ref if you want to allow re-auto-connect logic
+      // initializationAttempted.current = false;
     } else {
       wagmiDisconnect();
     }
@@ -123,6 +143,7 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
         disconnect,
         address: activeAddress,
         signer: activeSigner,
+        isConnecting,
       }}
     >
       {children}
