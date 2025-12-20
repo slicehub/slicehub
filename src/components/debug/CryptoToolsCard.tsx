@@ -19,7 +19,7 @@ export const CryptoToolsCard = () => {
                 const h = calculateCommitment(toolVote, BigInt(toolSalt));
                 setToolHash(h);
             } catch (_e) {
-                toast.error("Invalid salt");
+                toast.error("Invalid salt format");
             }
         }
     };
@@ -33,20 +33,21 @@ export const CryptoToolsCard = () => {
             <div className="flex gap-2">
                 <input
                     type="text"
-                    placeholder="Salt (Generate →)"
+                    placeholder="Salt (Empty to Generate)"
                     value={toolSalt}
                     onChange={(e) => setToolSalt(e.target.value)}
-                    className="flex-1 bg-[#f5f6f9] rounded-lg p-2 text-xs font-mono"
+                    className="flex-1 bg-[#f5f6f9] rounded-lg p-2 text-xs font-mono border-transparent border focus:border-[#8c8fff] outline-none transition-colors"
                 />
                 <button
                     onClick={handleCalculateHash}
-                    className="px-3 bg-gray-100 rounded-lg text-xs font-bold hover:bg-gray-200"
+                    className="px-3 bg-gray-100 rounded-lg text-xs font-bold hover:bg-gray-200 active:scale-95 transition-all"
                 >
-                    Calc Hash
+                    Calc Hash (Vote=1)
                 </button>
             </div>
             {toolHash && (
-                <div className="p-2 bg-gray-900 rounded-lg text-[9px] font-mono text-white break-all">
+                <div className="p-3 bg-gray-900 rounded-lg text-[9px] font-mono text-white break-all border border-gray-700">
+                    <span className="text-gray-500 select-none">Result: </span>
                     {toolHash}
                 </div>
             )}

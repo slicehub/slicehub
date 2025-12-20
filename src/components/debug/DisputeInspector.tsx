@@ -11,6 +11,7 @@ import {
     Database,
     CheckCircle,
     Copy,
+    AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -49,7 +50,12 @@ export const DisputeInspector: React.FC<DisputeInspectorProps> = ({
         toast.success("Salt copied");
     };
 
-    if (!data) return null;
+    if (!data) return (
+        <div className="bg-white rounded-[24px] p-10 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center gap-2 opacity-50">
+            <AlertCircle className="w-8 h-8 text-gray-300" />
+            <span className="text-sm font-bold text-gray-400">No Dispute Selected</span>
+        </div>
+    );
 
     return (
         <div className="bg-white rounded-[24px] p-6 shadow-md border border-gray-100 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
@@ -58,11 +64,11 @@ export const DisputeInspector: React.FC<DisputeInspectorProps> = ({
                 <div>
                     <h2 className="text-2xl font-extrabold text-[#1b1c23] flex items-center gap-2">
                         #{data.id}
-                        <span className="text-sm font-medium text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded-lg">
+                        <span className="text-xs font-medium text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded-lg">
                             {data.category}
                         </span>
                     </h2>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-2">
                         <span
                             className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${data.statusIndex === 0
                                     ? "bg-blue-100 text-blue-700"
@@ -227,7 +233,7 @@ export const DisputeInspector: React.FC<DisputeInspectorProps> = ({
                 </button>
 
                 {logs && (
-                    <div className="p-4 bg-gray-900 rounded-xl text-[10px] font-mono text-green-400 whitespace-pre-wrap border border-gray-800 shadow-inner">
+                    <div className="p-4 bg-gray-900 rounded-xl text-[10px] font-mono text-green-400 whitespace-pre-wrap border border-gray-800 shadow-inner max-h-40 overflow-auto">
                         <span className="opacity-50 mr-2">{">"}</span>
                         {logs}
                     </div>
