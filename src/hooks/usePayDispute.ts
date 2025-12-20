@@ -6,13 +6,17 @@ import { useSliceContract } from "./useSliceContract";
 import { useXOContracts } from "@/providers/XOContractsProvider";
 import { getContractsForChain } from "@/config/contracts";
 import { erc20Abi } from "@/contracts/erc20-abi";
+import { useEmbedded } from "@/providers/EmbeddedProvider";
+import { DEFAULT_CHAIN } from "@/config/chains";
 
 export function usePayDispute() {
   const { address, signer } = useXOContracts();
+  const { isEmbedded } = useEmbedded(); // Get context
   const [isPaying, setIsPaying] = useState(false);
 
   // 1. Get current chain to pick the right contract address
-  const chainId = useChainId();
+  const wagmiChainId = useChainId();
+  const chainId = isEmbedded ? DEFAULT_CHAIN.chain.id : wagmiChainId;
 
   // 2. We use the contract hook, which is now chain-aware (per your previous refactor)
   const contract = useSliceContract();

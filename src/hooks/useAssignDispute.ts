@@ -4,6 +4,8 @@ import { useSliceContract } from "./useSliceContract";
 import { useXOContracts } from "@/providers/XOContractsProvider";
 import { toast } from "sonner";
 import { getContractsForChain } from "@/config/contracts";
+import { useEmbedded } from "@/providers/EmbeddedProvider";
+import { DEFAULT_CHAIN } from "@/config/chains";
 
 const ERC20_ABI = [
   "function approve(address spender, uint256 amount) external returns (bool)",
@@ -29,6 +31,7 @@ async function processInBatches<T, R>(
 export function useAssignDispute() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFinding, setIsFinding] = useState(false);
+  const { isEmbedded } = useEmbedded(); // Get context
   const contract = useSliceContract();
   const { address, signer } = useXOContracts();
 
@@ -95,7 +98,11 @@ export function useAssignDispute() {
       const amountToApprove = disputeData.jurorStake;
 
       let chainId = 0;
-      if (signer?.provider) {
+
+      // FIX: Robust Chain ID detection
+      if (isEmbedded) {
+        chainId = DEFAULT_CHAIN.chain.id;
+      } else if (signer?.provider) {
         const net = await signer.provider.getNetwork();
         chainId = Number(net.chainId);
       }

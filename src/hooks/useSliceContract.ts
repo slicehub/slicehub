@@ -5,15 +5,21 @@ import { Contract } from "ethers";
 import { useXOContracts } from "@/providers/XOContractsProvider";
 import { useChainId } from "wagmi";
 import { getContractsForChain } from "@/config/contracts";
-import { sliceAbi } from "@/contracts/slice-abi"; // Ensure this path is correct
+import { useEmbedded } from "@/providers/EmbeddedProvider";
+import { DEFAULT_CHAIN } from "@/config/chains";
+import { sliceAbi } from "@/contracts/slice-abi";
 
 export function useSliceContract() {
   const { signer } = useXOContracts();
-  const chainId = useChainId();
+  const { isEmbedded } = useEmbedded();
+  const wagmiChainId = useChainId();
 
   const contract = useMemo(() => {
-    // 1. Get the correct address for the current chain
-    const { sliceContract: sliceAddress } = getContractsForChain(chainId);
+    // 1. Fix: Use the correct chain ID logic
+    const activeChainId = isEmbedded ? DEFAULT_CHAIN.chain.id : wagmiChainId;
+
+    // Get the correct address for the current chain
+    const { sliceContract: sliceAddress } = getContractsForChain(activeChainId);
 
     // 2. Validation: We need the Address AND the Signer
     if (!sliceAddress || !signer) {
@@ -27,7 +33,7 @@ export function useSliceContract() {
       console.error("Failed to create Slice contract instance:", error);
       return null;
     }
-  }, [signer, chainId]);
+  }, [signer, wagmiChainId, isEmbedded]);
 
   return contract;
 }
