@@ -1,13 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { parseUnits, isAddress } from "ethers";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { erc20Abi } from "viem"; // or import from your local abi file
-import { getContractsForChain } from "@/config/contracts";
-import { useAccount } from "wagmi";
-import { toast } from "sonner";
 import { Loader2, X } from "lucide-react";
+import { useSendFunds } from "@/hooks/useSendFunds"; // Import the new hook
 
 interface SendModalProps {
   isOpen: boolean;
@@ -18,58 +13,16 @@ export const SendModal: React.FC<SendModalProps> = ({ isOpen, onClose }) => {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
 
-  // Wagmi Hooks for writing to contract
-  const { data: hash, writeContract, isPending, error } = useWriteContract();
-  const { chainId } = useAccount();
+  // Use the hook, passing a callback to clear the form on success
+  const { sendFunds, isLoading } = useSendFunds(() => {
+    onClose();
+    setRecipient("");
+    setAmount("");
+  });
 
-  // Watch for transaction completion
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({ hash });
-
-  // Reset and close on success
-  React.useEffect(() => {
-    if (isConfirmed) {
-      toast.success("Transfer successful!");
-      onClose();
-      setRecipient("");
-      setAmount("");
-    }
-  }, [isConfirmed, onClose]);
-
-  // Handle errors
-  React.useEffect(() => {
-    if (error) {
-      toast.error(error.message || "Transaction failed");
-    }
-  }, [error]);
-
-  const handleSend = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!isAddress(recipient)) {
-      toast.error("Invalid recipient address");
-      return;
-    }
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error("Invalid amount");
-      return;
-    }
-
-    try {
-      // USDC has 6 decimals
-      const value = parseUnits(amount, 6);
-      const { usdcToken } = getContractsForChain(chainId || 0);
-
-      writeContract({
-        address: usdcToken as `0x${string}`,
-        abi: erc20Abi,
-        functionName: "transfer",
-        args: [recipient as `0x${string}`, value],
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to prepare transaction");
-    }
+    void sendFunds(recipient, amount);
   };
 
   if (!isOpen) return null;
@@ -91,7 +44,7 @@ export const SendModal: React.FC<SendModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSend} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
               Recipient Address
@@ -102,7 +55,7 @@ export const SendModal: React.FC<SendModalProps> = ({ isOpen, onClose }) => {
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
               className="w-full p-4 bg-[#f5f6f9] rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-[#8c8fff] transition-all"
-              disabled={isPending || isConfirming}
+              disabled={isLoading}
             />
           </div>
 
@@ -116,19 +69,19 @@ export const SendModal: React.FC<SendModalProps> = ({ isOpen, onClose }) => {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="w-full p-4 bg-[#f5f6f9] rounded-xl text-lg font-bold outline-none focus:ring-2 focus:ring-[#8c8fff] transition-all"
-              disabled={isPending || isConfirming}
+              disabled={isLoading}
             />
           </div>
 
           <button
             type="submit"
-            disabled={isPending || isConfirming}
+            disabled={isLoading}
             className="w-full py-4 mt-2 bg-[#1b1c23] text-white rounded-xl font-bold hover:bg-[#2c2d33] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
-            {isPending || isConfirming ? (
+            {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                {isPending ? "Check Wallet..." : "Confirming..."}
+                Processing...
               </>
             ) : (
               "Confirm Send"
