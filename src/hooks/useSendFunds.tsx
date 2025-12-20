@@ -128,11 +128,15 @@ export function useSendFunds(onSuccess?: () => void) {
         console.log("🚀 Sending Transaction...");
 
         // FORCE LEGACY TYPE (Optional Debugging Step)
-        // Uncomment this if the error persists. Some embedded wallets hate Type 2 txs.
-        // delete populatedTx.maxFeePerGas;
-        // delete populatedTx.maxPriorityFeePerGas;
-        // populatedTx.type = 0; 
+        delete populatedTx.maxFeePerGas;
+        delete populatedTx.maxPriorityFeePerGas;
 
+        // Ensure we explicitly set a gasPrice (fallback to feeData or a default)
+        // If feeData.gasPrice is null, we can try to get it again or rely on the provider
+        const legacyFeeData = await signer.provider?.getFeeData();
+        populatedTx.gasPrice = legacyFeeData?.gasPrice || undefined;
+
+        populatedTx.type = 0;
         const tx = await signer.sendTransaction(populatedTx);
 
         console.log("✅ Transaction Sent! Hash:", tx.hash);
