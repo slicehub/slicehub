@@ -24,7 +24,7 @@ export default function CategoryAmountPage() {
     <div className="flex flex-col h-screen bg-gray-50 p-4">
       <CategoryAmountHeader onBack={handleBack} />
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center text-center mb-4">
+      <div className="bg-white rounded-2xl p-8 shadow-sm flex flex-col items-center text-center mb-4">
         <div className="w-24 h-24 mb-4">
           <video
             src="/animations/money.mp4"

@@ -15,7 +15,7 @@ export function useEvidence(disputeId: string, role: EvidenceRole) {
     role: isClaimant ? "Claimant" : "Defendant",
     avatar: isClaimant
       ? "/images/profiles-mockup/profile-1.jpg"
-      : "/images/profiles-mockup/profile-2.png", // Mock or dynamic
+      : "/images/profiles-mockup/profile-2.jpg", // Mock or dynamic
   };
 
   // 2. Statement / Demand
