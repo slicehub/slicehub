@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useBalance } from "wagmi";
 import { Contract, formatUnits } from "ethers";
 import { useEmbedded } from "@/providers/EmbeddedProvider";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 import { erc20Abi } from "@/contracts/erc20-abi";
 import { toast } from "sonner";
 
@@ -12,7 +12,7 @@ import { defaultChain } from "@/config/chains"; // Import your default chain con
 
 export function useTokenBalance(tokenAddress: string | undefined) {
   const { isEmbedded } = useEmbedded();
-  const { address, signer } = useContracts();
+  const { address, signer } = useConnect();
 
   // --- 1. Standard Mode (Wagmi) ---
   const {

@@ -13,9 +13,9 @@ import { useAccount, useWalletClient, useSwitchChain } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { walletClientToSigner } from "@/util/ethers-adapter";
 import { defaultChain } from "@/config/chains";
-import { useConnect } from "@/hooks/useConnect";
+import { useXoConnect } from "@/hooks/useXoConnect";
 
-interface ContractsContextType {
+interface ConnectContextType {
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   address: string | null;
@@ -24,13 +24,13 @@ interface ContractsContextType {
   isWrongNetwork: boolean;
 }
 
-const ContractsContext = createContext<ContractsContextType | null>(null);
+const ConnectContext = createContext<ConnectContextType | null>(null);
 
 export const ConnectProvider = ({ children }: { children: ReactNode }) => {
   const { isEmbedded } = useEmbedded();
 
   // --- STRATEGY 1: Embedded Wallet (via Hook) ---
-  const xo = useConnect(isEmbedded);
+  const xo = useXoConnect(isEmbedded);
 
   // --- STRATEGY 2: Standard Web Wallet (Wagmi/Privy) ---
   const {
@@ -98,7 +98,7 @@ export const ConnectProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <ContractsContext.Provider
+    <ConnectContext.Provider
       value={{
         connect,
         disconnect,
@@ -109,13 +109,13 @@ export const ConnectProvider = ({ children }: { children: ReactNode }) => {
       }}
     >
       {children}
-    </ContractsContext.Provider>
+    </ConnectContext.Provider>
   );
 };
 
-export const useContracts = () => {
-  const ctx = useContext(ContractsContext);
+export const useConnect = () => {
+  const ctx = useContext(ConnectContext);
   if (!ctx)
-    throw new Error("useContracts must be used within XOContractsProvider");
+    throw new Error("useContracts must be used within ContractsProvider");
   return ctx;
 };

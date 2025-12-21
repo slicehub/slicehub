@@ -10,7 +10,7 @@ import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOver
 import { TimerCard } from "@/components/dispute-overview/TimerCard";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 import { ArrowRight, RefreshCw, Eye } from "lucide-react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { toast } from "sonner";
@@ -21,7 +21,7 @@ const STATUS_REVEAL = 2;
 
 export default function VotePage() {
   const router = useRouter();
-  const { address } = useContracts();
+  const { address } = useConnect();
 
   const [selectedVote, setSelectedVote] = useState<number | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);

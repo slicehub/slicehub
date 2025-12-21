@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 import { DEFAULT_CHAIN } from "@/config/chains"; // Import settings to get the Chain ID
 import { toast } from "sonner";
 import { X, Copy, Check } from "lucide-react";
@@ -15,7 +15,7 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { address } = useContracts();
+  const { address } = useConnect();
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !address) return null;

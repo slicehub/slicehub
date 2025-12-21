@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Contract } from "ethers";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 import { useChainId } from "wagmi";
 import { getContractsForChain } from "@/config/contracts";
 import { useEmbedded } from "@/providers/EmbeddedProvider";
@@ -10,7 +10,7 @@ import { DEFAULT_CHAIN } from "@/config/chains";
 import { sliceAbi } from "@/contracts/slice-abi";
 
 export function useSliceContract() {
-  const { signer } = useContracts();
+  const { signer } = useConnect();
   const { isEmbedded } = useEmbedded();
   const wagmiChainId = useChainId();
 

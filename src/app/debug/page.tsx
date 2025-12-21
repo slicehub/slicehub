@@ -8,7 +8,7 @@ import { formatUnits } from "ethers";
 
 // Hooks
 import { useSliceContract } from "@/hooks/useSliceContract";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 import { useSliceVoting } from "@/hooks/useSliceVoting";
 import { useCreateDispute } from "@/hooks/useCreateDispute";
 import { usePayDispute } from "@/hooks/usePayDispute";
@@ -21,7 +21,7 @@ import { CryptoToolsCard } from "@/components/debug/CryptoToolsCard";
 
 export default function DebugPage() {
   const router = useRouter();
-  const { address } = useContracts();
+  const { address } = useConnect();
   const contract = useSliceContract();
 
   // Logic Hooks

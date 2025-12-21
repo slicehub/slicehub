@@ -4,7 +4,7 @@ import { BrowserProvider, Signer } from "ethers";
 import { toHex } from "viem";
 import { DEFAULT_CHAIN } from "@/config/chains";
 
-export function useConnect(enabled: boolean) {
+export function useXoConnect(enabled: boolean) {
   const [address, setAddress] = useState<string | null>(null);
   const [signer, setSigner] = useState<Signer | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);

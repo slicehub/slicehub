@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useSliceContract } from "./useSliceContract";
 import { calculateCommitment, generateSalt } from "../util/votingUtils";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 // 1. Import the utility
 import { saveVoteData, getVoteData } from "../util/votingStorage";
 
@@ -11,7 +11,7 @@ export const useSliceVoting = () => {
   const [logs, setLogs] = useState<string>("");
 
   const contract = useSliceContract();
-  const { address } = useContracts();
+  const { address } = useConnect();
 
   // --- COMMIT VOTE ---
   const commitVote = async (disputeId: string, vote: number) => {

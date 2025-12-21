@@ -12,12 +12,12 @@ import { toast } from "sonner";
 import { getContractsForChain } from "@/config/contracts";
 import { DEFAULT_CHAIN } from "@/config/chains";
 import { useEmbedded } from "@/providers/EmbeddedProvider";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 
 export function useSendFunds(onSuccess?: () => void) {
   // --- 1. Contexts & State ---
   const { isEmbedded } = useEmbedded();
-  const { signer } = useContracts();
+  const { signer } = useConnect();
   const { chainId: wagmiChainId } = useAccount();
 
   // Wagmi Hooks

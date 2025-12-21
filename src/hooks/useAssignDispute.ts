@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { Contract } from "ethers";
 import { useSliceContract } from "./useSliceContract";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 import { toast } from "sonner";
 import { getContractsForChain } from "@/config/contracts";
 import { useEmbedded } from "@/providers/EmbeddedProvider";
@@ -33,7 +33,7 @@ export function useAssignDispute() {
   const [isFinding, setIsFinding] = useState(false);
   const { isEmbedded } = useEmbedded(); // Get context
   const contract = useSliceContract();
-  const { address, signer } = useContracts();
+  const { address, signer } = useConnect();
 
   const isReady = !!(contract && address && signer);
 

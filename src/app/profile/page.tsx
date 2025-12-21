@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Terminal, Bug, Coins, Wallet } from "lucide-react";
 import ConnectButton from "@/components/ConnectButton";
 import { useSliceContract } from "@/hooks/useSliceContract";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 
 export default function ProfilePage() {
   const router = useRouter();
   const contract = useSliceContract();
-  const { address } = useContracts();
+  const { address } = useConnect();
 
   // --- State ---
   const [stats, setStats] = useState({

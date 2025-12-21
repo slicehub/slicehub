@@ -1,12 +1,12 @@
 "use client";
 
 import { useAccount } from "wagmi";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 import { defaultChain } from "@/config/chains";
 
 export const NetworkDebugger = () => {
   const { chain } = useAccount();
-  const { signer, address } = useContracts();
+  const { signer, address } = useConnect();
 
   // Note: Visibility is handled by the parent (DebugToggle)
   if (!address) return null;

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useSliceContract } from "./useSliceContract";
-import { useContracts } from "@/providers/ConnectProvider";
+import { useConnect } from "@/providers/ConnectProvider";
 import { toast } from "sonner";
 
 export function useExecuteRuling() {
-  const { address } = useContracts();
+  const { address } = useConnect();
   const [isExecuting, setIsExecuting] = useState(false);
   const contract = useSliceContract();
 
