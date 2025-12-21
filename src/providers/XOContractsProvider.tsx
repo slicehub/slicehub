@@ -36,7 +36,6 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
   const { isEmbedded } = useEmbedded();
 
   // --- Global State ---
-  const [activeAddress, setActiveAddress] = useState<string | null>(null);
   const [activeSigner, setActiveSigner] = useState<Signer | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -53,12 +52,17 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
 
   const activeChain = DEFAULT_CHAIN.chain;
 
-  // 1. XO Connection Logic
+  // --- DERIVED STATE (Fixes "Logged out in UI" bug) ---
+  // Instead of syncing via useEffect, we calculate the current address on every render.
+  // This ensures the UI updates instantly when Wagmi/Privy initializes.
+  const address = isEmbedded ? xoAddress : (isConnected && wagmiAddress ? wagmiAddress : null);
+
+  // 1. XO Connection Logic (Embedded Mode)
   const connectXO = useCallback(
     async (silent = false) => {
       setIsConnecting(true);
       try {
-        console.log("🚀 Starting XO Connection..."); // Added log
+        console.log("🚀 Starting XO Connection...");
         console.log("📦 Importing xo-connect...");
         const { XOConnectProvider } = await import("xo-connect");
 
@@ -77,7 +81,6 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
         await provider.request({ method: "eth_requestAccounts" });
 
         // 2. ⚡ FORCE CHAIN SWITCH TO HEX ID ⚡
-        // This ensures the wallet is definitely on Base (0x2105) and not Ethereum (0x1)
         try {
           console.log(`🔀 Switching Chain to ${chainIdHex}...`);
           await provider.request({
@@ -89,7 +92,6 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
         }
 
         console.log("🛠 Creating Ethers Provider...");
-        // Pass "any" to allow Ethers to accept the network even if it changed
         const ethersProvider = new BrowserProvider(provider, "any");
 
         console.log("✍️ Getting Signer...");
@@ -105,7 +107,6 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
           toast.success(`Connected via XO`);
         }
       } catch (err: any) {
-        // This will now show up in your Red Debug Overlay
         console.error("❌ XO Connection Failed Details:", {
           message: err.message,
           stack: err.stack,
@@ -130,25 +131,17 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isEmbedded, xoAddress, connectXO]);
 
-  // 3. Wagmi/Privy Logic (Web)
+  // 3. SIGNER SYNC EFFECT (Fixes Signer Availability)
+  // We only sync the signer because it's a complex object derived from the client.
   useEffect(() => {
-    if (!isEmbedded) {
-      // 3a. Handle Address (Read-only UI) - Updates immediately
-      if (isConnected && wagmiAddress) {
-        setActiveAddress(wagmiAddress);
-      } else {
-        setActiveAddress(null);
-        setActiveSigner(null); // Clear signer if disconnected
-        return;
-      }
-
-      // 3b. Handle Signer (Write actions) - Updates when walletClient is ready
+    if (isEmbedded) {
+      setActiveSigner(xoSigner);
+    } else {
+      // Standard Web Mode
       if (isConnected && walletClient) {
         // Network Check
         if (chain?.id !== defaultChain.id) {
-          console.warn(
-            `[XOProvider] Wrong Network detected (${chain?.id}). Switching...`,
-          );
+          console.warn(`[XOProvider] Wrong Network detected (${chain?.id}). Switching...`);
           switchChain({ chainId: defaultChain.id });
           return;
         }
@@ -160,17 +153,11 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
           console.error("[XOProvider] Error creating signer:", e);
           setActiveSigner(null);
         }
+      } else {
+        setActiveSigner(null);
       }
     }
-  }, [isEmbedded, isConnected, wagmiAddress, walletClient, chain, switchChain]);
-
-  // 4. Sync Logic for Embedded
-  useEffect(() => {
-    if (isEmbedded) {
-      setActiveSigner(xoSigner);
-      setActiveAddress(xoAddress);
-    }
-  }, [xoSigner, xoAddress, isEmbedded]);
+  }, [isEmbedded, isConnected, walletClient, chain, switchChain, xoSigner]);
 
   // --- Public Interface ---
   const connect = async () => {
@@ -186,6 +173,8 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
       setXoAddress(null);
       setXoSigner(null);
     } else {
+      // Single source of truth for logout. 
+      // Ensure ConnectButton does NOT call logout() separately.
       await logout();
     }
   };
@@ -195,7 +184,7 @@ export const XOContractsProvider = ({ children }: { children: ReactNode }) => {
       value={{
         connect,
         disconnect,
-        address: activeAddress,
+        address: (address as string) || null, // Cast derived address
         signer: activeSigner,
         isConnecting,
       }}

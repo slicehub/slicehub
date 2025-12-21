@@ -48,3 +48,4 @@ public/workbox-*.js
 public/worker-*.js
 
 .repomixignore
+.idea/
