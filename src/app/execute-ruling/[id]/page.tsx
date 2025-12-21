@@ -65,7 +65,7 @@ export default function ExecuteRulingPage() {
           {
             name: dispute.claimer.slice(0, 6) + "...",
             role: "Claimer" as const,
-            avatar: "/images/profiles-mockup/profile-1.png",
+            avatar: "/images/profiles-mockup/profile-1.jpg",
           },
           {
             name: dispute.defender.slice(0, 6) + "...",
