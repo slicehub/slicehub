@@ -14,6 +14,13 @@ export const NativeSendCard = () => {
   const addLog = (msg: string) =>
     setLogs((prev) => [...prev, `${new Date().toLocaleTimeString()} > ${msg}`]);
 
+  // Helper to safely stringify objects with BigInt (like gas or values)
+  const safeStringify = (obj: any) => {
+    return JSON.stringify(obj, (key, value) =>
+      typeof value === "bigint" ? value.toString() : value,
+    );
+  };
+
   const handleNativeSend = async () => {
     if (!signer || !address) {
       toast.error("No signer available");
@@ -30,13 +37,13 @@ export const NativeSendCard = () => {
       addLog(`Signer Network: Chain ID ${network?.chainId}`);
 
       // 2. Construct Minimal Transaction
-      // We DO NOT manually populate gas or nonce. We let the wallet handle it.
       const txPayload = {
         to: address, // Send to self
-        value: parseEther("0.000001"), // Tiny amount
+        value: parseEther("0.000001"), // Returns a BigInt
       };
 
-      addLog(`Payload: ${JSON.stringify(txPayload)}`);
+      // FIX: Use safeStringify instead of JSON.stringify
+      addLog(`Payload: ${safeStringify(txPayload)}`);
 
       // 3. Send
       addLog("Requesting Signature...");
@@ -72,7 +79,7 @@ export const NativeSendCard = () => {
         <div className="bg-indigo-50 p-1.5 rounded-lg">
           <AlertTriangle className="w-4 h-4 text-indigo-500" />
         </div>
-        <h3 className="font-bold text-sm text-[#1b1c23]">Debugger Send</h3>
+        <h3 className="font-bold text-sm text-[#1b1c23]">Native Send</h3>
       </div>
 
       <p className="text-xs text-gray-500">
