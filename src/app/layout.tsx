@@ -8,7 +8,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { TimerProvider } from "@/contexts/TimerContext";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
 import { ConsoleOverlay } from "@/components/debug/ConsoleOverlay";
-import {DebugToggle} from "@/components/debug/DebugToggle";
+import { DebugToggle } from "@/components/debug/DebugToggle";
+import { AutoConnect } from "@/components/AutoConnect";
 
 export const metadata: Metadata = {
   title: "Slice",
@@ -45,6 +46,7 @@ export default async function RootLayout({
       >
         <EmbeddedProvider>
           <ContextProvider cookies={cookies}>
+            <AutoConnect />
             <ConnectProvider>
               <TimerProvider>
                 {/* Updated Structure:
