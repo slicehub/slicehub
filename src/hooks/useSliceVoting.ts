@@ -1,27 +1,24 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { useSliceContract } from "./useSliceContract";
+import { useWriteContract, usePublicClient, useAccount } from "wagmi";
+import { SLICE_ABI, SLICE_ADDRESS } from "@/config/contracts";
 import { calculateCommitment, generateSalt } from "../util/votingUtils";
-import { useConnect } from "@/providers/ConnectProvider";
-// 1. Import the utility
 import { saveVoteData, getVoteData } from "../util/votingStorage";
 
 export const useSliceVoting = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [logs, setLogs] = useState<string>("");
 
-  const contract = useSliceContract();
-  const { address } = useConnect();
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
+  const { address } = useAccount();
 
   // --- COMMIT VOTE ---
   const commitVote = async (disputeId: string, vote: number) => {
-    // 2. Validate Contract Address
-    if (!contract || !contract.target || !address) {
-      toast.error("Wallet or Contract not ready");
+    if (!address) {
+      toast.error("Please connect your wallet");
       return false;
     }
-    // Ethers v6 uses .target to get the address
-    const contractAddress = contract.target as string;
 
     setIsProcessing(true);
     setLogs("Generating secure commitment...");
@@ -33,12 +30,21 @@ export const useSliceVoting = () => {
       console.log(`Vote: ${vote}, Salt: ${salt}, Hash: ${commitmentHash}`);
       setLogs("Sending commitment to blockchain...");
 
-      const tx = await contract.commitVote(disputeId, commitmentHash);
+      const hash = await writeContractAsync({
+        address: SLICE_ADDRESS,
+        abi: SLICE_ABI,
+        functionName: "commitVote",
+        args: [BigInt(disputeId), commitmentHash as `0x${string}`],
+      });
+
       setLogs("Waiting for confirmation...");
-      await tx.wait();
+
+      if (publicClient) {
+        await publicClient.waitForTransactionReceipt({ hash });
+      }
 
       // 3. Use Utility to Save
-      saveVoteData(contractAddress, disputeId, address, vote, salt);
+      saveVoteData(SLICE_ADDRESS, disputeId, address, vote, salt);
 
       toast.success("Vote committed successfully! Salt saved.");
       setLogs("Commitment confirmed on-chain.");
@@ -46,9 +52,9 @@ export const useSliceVoting = () => {
     } catch (error: any) {
       console.error("Commit Error:", error);
       const msg =
-        (error as any).reason ||
-        (error as any).shortMessage ||
-        (error as any).message ||
+        error.reason ||
+        error.shortMessage ||
+        error.message ||
         "Failed to commit vote";
       toast.error(`Commit Error: ${msg}`);
       setLogs(`Error: ${msg}`);
@@ -60,18 +66,17 @@ export const useSliceVoting = () => {
 
   // --- REVEAL VOTE ---
   const revealVote = async (disputeId: string) => {
-    if (!contract || !contract.target || !address) {
-      toast.error("Wallet not connected");
+    if (!address) {
+      toast.error("Please connect your wallet");
       return false;
     }
-    const contractAddress = contract.target as string;
 
     setIsProcessing(true);
     setLogs("Retrieving secret salt...");
 
     try {
       // 4. Use Utility to Retrieve
-      const storedData = getVoteData(contractAddress, disputeId, address);
+      const storedData = getVoteData(SLICE_ADDRESS, disputeId, address);
 
       if (!storedData) {
         throw new Error(
@@ -83,9 +88,17 @@ export const useSliceVoting = () => {
 
       setLogs(`Revealing Vote: ${vote}...`);
 
-      const tx = await contract.revealVote(disputeId, vote, BigInt(salt));
+      const hash = await writeContractAsync({
+        address: SLICE_ADDRESS,
+        abi: SLICE_ABI,
+        functionName: "revealVote",
+        args: [BigInt(disputeId), BigInt(vote), BigInt(salt)],
+      });
+
       setLogs("Waiting for confirmation...");
-      await tx.wait();
+      if (publicClient) {
+        await publicClient.waitForTransactionReceipt({ hash });
+      }
 
       toast.success("Vote revealed successfully!");
       setLogs("Vote revealed and counted.");
@@ -93,13 +106,11 @@ export const useSliceVoting = () => {
     } catch (error: any) {
       console.error("Reveal Error:", error);
       const msg =
-        (error as any).reason ||
-        (error as any).shortMessage ||
-        (error as any).message ||
+        error.reason ||
+        error.shortMessage ||
+        error.message ||
         "Failed to reveal vote";
       toast.error(`Reveal Error: ${msg}`);
-      setLogs(`Error: ${msg}`);
-
       setLogs(`Error: ${msg}`);
       return false;
     } finally {

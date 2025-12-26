@@ -7,7 +7,7 @@ import { defaultChain } from "@/config/chains";
 
 export const NetworkDebugger = () => {
   const { chain } = useAccount();
-  const { signer, address } = useConnect();
+  const { address } = useConnect();
   const { isEmbedded } = useEmbedded(); // Get embedded state
 
   // Logic: If embedded, we rely on the Default Chain (XO enforces this).
@@ -56,9 +56,8 @@ export const NetworkDebugger = () => {
             Actual_ID
           </span>
           <span
-            className={`bg-white/5 px-1.5 py-0.5 rounded ${
-              isMatch ? "text-indigo-400" : "text-red-400"
-            }`}
+            className={`bg-white/5 px-1.5 py-0.5 rounded ${isMatch ? "text-indigo-400" : "text-red-400"
+              }`}
           >
             {actualChainId}
           </span>
@@ -68,13 +67,11 @@ export const NetworkDebugger = () => {
           <span className="text-gray-500 uppercase tracking-tighter">
             Signer_Status
           </span>
-          <span
-            className={
-              signer ? "text-indigo-400" : "text-red-500 animate-pulse"
-            }
-          >
-            {signer ? "AUTHORIZED" : "HALTED"}
-          </span>
+          {address ? (
+            <span className="text-indigo-400">AUTHORIZED</span>
+          ) : (
+            <span className="text-red-500 animate-pulse">DISCONNECTED</span>
+          )}
         </div>
       </div>
     </div>

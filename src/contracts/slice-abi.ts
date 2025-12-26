@@ -566,4 +566,4 @@ export const sliceAbi = [
     stateMutability: "view",
     type: "function",
   },
-];
+] as const;

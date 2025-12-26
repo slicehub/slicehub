@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useGetDispute } from "@/hooks/useGetDispute";
-import { useSliceContract } from "@/hooks/useSliceContract";
+import { SLICE_ADDRESS } from "@/config/contracts";
 import { useSliceVoting } from "@/hooks/useSliceVoting";
 import { useConnect } from "@/providers/ConnectProvider";
 import { getVoteData } from "@/util/votingStorage";
@@ -11,7 +11,7 @@ const STATUS_REVEAL = 2;
 
 export function useVote(disputeId: string) {
   const { address } = useConnect();
-  const contract = useSliceContract();
+  // const contract = useSliceContract(); // Removed
 
   // Local state
   const [selectedVote, setSelectedVote] = useState<number | null>(null);
@@ -26,12 +26,9 @@ export function useVote(disputeId: string) {
   useEffect(() => {
     if (
       typeof window !== "undefined" &&
-      address &&
-      contract &&
-      contract.target
+      address
     ) {
-      const contractAddr = contract.target as string;
-      const stored = getVoteData(contractAddr, disputeId, address);
+      const stored = getVoteData(SLICE_ADDRESS, disputeId, address);
 
       if (stored) {
         setHasCommittedLocally(true);
@@ -41,7 +38,7 @@ export function useVote(disputeId: string) {
         setSelectedVote(null);
       }
     }
-  }, [address, disputeId, contract]);
+  }, [address, disputeId]);
 
   // Actions
   const handleVoteSelect = useCallback(

@@ -1,51 +1,47 @@
 import { useState } from "react";
-import { useSliceContract } from "./useSliceContract";
-import { useConnect } from "@/providers/ConnectProvider";
+import { useWriteContract, usePublicClient } from "wagmi";
+import { SLICE_ABI, SLICE_ADDRESS } from "@/config/contracts";
 import { toast } from "sonner";
 
 export function useExecuteRuling() {
-  const { address } = useConnect();
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
   const [isExecuting, setIsExecuting] = useState(false);
-  const contract = useSliceContract();
 
   const executeRuling = async (disputeId: string | number) => {
-    if (!contract || !address) {
-      toast.error("Please connect your wallet");
-      return null;
-    }
-
-    setIsExecuting(true);
-
     try {
+      setIsExecuting(true);
       console.log(`Executing ruling for dispute #${disputeId}...`);
 
-      // 1. Send Transaction
-      const tx = await contract.executeRuling(disputeId);
+      const hash = await writeContractAsync({
+        address: SLICE_ADDRESS,
+        abi: SLICE_ABI,
+        functionName: "executeRuling",
+        args: [BigInt(disputeId)],
+      });
 
       toast.info("Transaction sent. Waiting for confirmation...");
 
-      // 2. Wait for confirmation
-      const receipt = await tx.wait();
-      console.log("Ruling executed:", receipt);
-
-      // 3. Optional: Parse events to find the winner if needed immediately
-      // For now, we assume success based on receipt status
-      if (receipt.status === 1) {
-        toast.success("Ruling executed successfully!");
-        return true;
-      } else {
-        throw new Error("Transaction failed on-chain");
+      // Wait for confirmation so the UI can reload the status immediately after
+      if (publicClient) {
+        await publicClient.waitForTransactionReceipt({ hash });
       }
+
+      toast.success("Ruling executed successfully!");
+      return hash;
     } catch (err: any) {
       console.error("Execution Error:", err);
       const msg =
         err.reason || err.shortMessage || err.message || "Unknown error";
       toast.error(`Execution Failed: ${msg}`);
-      return null;
+      throw err;
     } finally {
       setIsExecuting(false);
     }
   };
 
-  return { executeRuling, isExecuting };
+  return {
+    executeRuling,
+    isExecuting // Matches the original return name (was isExecuting in view_file)
+  };
 }

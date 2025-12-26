@@ -1,17 +1,10 @@
 import { useCallback, useState } from "react";
-import { Contract } from "ethers";
-import { useSliceContract } from "./useSliceContract";
-import { useSmartWallet } from "@/hooks/useSmartWallet";
+import { useWriteContract, usePublicClient, useAccount, useChainId } from "wagmi";
+import { erc20Abi } from "viem";
+import { SLICE_ABI, getContractsForChain } from "@/config/contracts";
 import { toast } from "sonner";
-import { getContractsForChain } from "@/config/contracts";
-import { useContractTx } from "./useContractTx";
 
-const ERC20_ABI = [
-  "function approve(address spender, uint256 amount) external returns (bool)",
-  "function allowance(address owner, address spender) external view returns (uint256)",
-];
-
-// Helper to process arrays in chunks (to avoid RPC blocking)
+// Helper to match logic from original file
 async function processInBatches<T, R>(
   items: T[],
   batchSize: number,
@@ -22,47 +15,59 @@ async function processInBatches<T, R>(
     const batch = items.slice(i, i + batchSize);
     const batchResults = await Promise.all(batch.map(processor));
     results.push(...batchResults);
-    await new Promise((r) => setTimeout(r, 100)); // Breathing room for RPC
+    await new Promise((r) => setTimeout(r, 100));
   }
   return results;
 }
 
 export function useAssignDispute() {
   const [isFinding, setIsFinding] = useState(false);
-  const { address, signer, chainId } = useSmartWallet();
-  const contract = useSliceContract();
-  const { execute, isProcessing: isLoading } = useContractTx();
+  const [isJoining, setIsJoining] = useState(false);
+  const { address } = useAccount();
+  const chainId = useChainId();
 
-  const isReady = !!(contract && address && signer);
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
 
-  // 1. MATCHMAKER
+  // We need contracts
+  const { sliceContract, usdcToken } = getContractsForChain(chainId);
+
+  // 1. MATCHMAKER Logic
+  // We need to fetch disputeCount and check disputes.
+  // Using publicClient for these one-off reads is cleaner than hooks inside a callback.
+
   const findActiveDispute = useCallback(async (): Promise<number | null> => {
-    if (!contract) return null;
+    if (!publicClient || !sliceContract) return null;
     setIsFinding(true);
 
     try {
-      // Step 1: Get Total Count with Retry
-      let countBigInt = BigInt(0);
-      try {
-        countBigInt = await contract.disputeCount();
-      } catch (e) {
-        console.warn("[Matchmaker] Retrying count fetch...", e);
-        await new Promise((r) => setTimeout(r, 1000));
-        countBigInt = await contract.disputeCount();
-      }
+      // Step 1: Get Total Count
+      const count = await publicClient.readContract({
+        address: sliceContract as `0x${string}`,
+        abi: SLICE_ABI,
+        functionName: "disputeCount"
+      });
 
-      const totalDisputes = Number(countBigInt);
+      const totalDisputes = Number(count);
       if (totalDisputes === 0) {
         toast.error("No disputes created yet.");
         return null;
       }
 
       // Step 2: Batched Search
-      const allIds = Array.from({ length: totalDisputes }, (_, i) => i + 1);
-      const results = await processInBatches(allIds, 5, async (id) => {
+      // IDs are 0 to total-1.
+      const correctIds = Array.from({ length: totalDisputes }, (_, i) => i);
+
+      const results = await processInBatches(correctIds, 5, async (id) => {
         try {
-          const d = await contract.disputes(id);
-          if (Number(d.status) === 1) return id; // Status 1 = Commit Phase
+          const d = await publicClient.readContract({
+            address: sliceContract as `0x${string}`,
+            abi: SLICE_ABI,
+            functionName: "disputes",
+            args: [BigInt(id)]
+          });
+          // d is struct. status is enum (uint8).
+          if (d.status === 1) return id; // Status 1 = Commit Phase (Open)
         } catch (e) {
           console.warn(`[Matchmaker] Skipped #${id}`, e);
         }
@@ -71,7 +76,10 @@ export function useAssignDispute() {
 
       const availableIds = results.filter((id): id is number => id !== null);
 
-      if (availableIds.length === 0) return null;
+      if (availableIds.length === 0) {
+        // Fallback if none found?
+        return null;
+      }
 
       const randomIndex = Math.floor(Math.random() * availableIds.length);
       return availableIds[randomIndex];
@@ -81,62 +89,78 @@ export function useAssignDispute() {
     } finally {
       setIsFinding(false);
     }
-  }, [contract]);
+  }, [publicClient, sliceContract]);
 
   // 2. ACTION: Join Dispute
   const joinDispute = async (disputeId: number) => {
-    if (!isReady) {
+    if (!address || !publicClient) {
       toast.error("Wallet not connected");
       return false;
     }
 
-    return execute("Join Dispute", async () => {
-      const disputeData = await contract!.disputes(disputeId);
-      const amountToApprove = disputeData.jurorStake; // Note: Ensure this field exists on contract struct
+    try {
+      setIsJoining(true);
 
-      // Get BOTH contracts dynamically from the chain ID
-      const { usdcToken, sliceContract: sliceAddress } =
-        getContractsForChain(chainId);
+      // Fetch required stake
+      const disputeData = await publicClient.readContract({
+        address: sliceContract as `0x${string}`,
+        abi: SLICE_ABI,
+        functionName: "disputes",
+        args: [BigInt(disputeId)]
+      });
+      const amountToApprove = disputeData.jurorStake;
 
-      const usdcContract = new Contract(usdcToken, ERC20_ABI, signer);
+      console.log(`[Join] Required Stake: ${amountToApprove}`);
 
-      console.log(
-        `[Join] Approving ${amountToApprove} USDC to Slice: ${sliceAddress}`,
-      );
+      // Check Allowance
+      const allowance = await publicClient.readContract({
+        address: usdcToken as `0x${string}`,
+        abi: erc20Abi,
+        functionName: "allowance",
+        args: [address, sliceContract as `0x${string}`]
+      });
 
-      toast.info("Approving Stake...");
-      const approveTx = await usdcContract.approve(
-        sliceAddress,
-        amountToApprove,
-      );
-      await approveTx.wait();
-
-      // Polling for Allowance (Robustness)
-      toast.info("Verifying approval...");
-      let approvalVerified = false;
-      for (let i = 0; i < 10; i++) {
-        try {
-          const allowance = await usdcContract.allowance(address, sliceAddress);
-          if (allowance >= amountToApprove) {
-            approvalVerified = true;
-            break;
-          }
-        } catch (e) {
-          console.warn("Polling for allowance failed, will retry...", e);
-        }
-        await new Promise((r) => setTimeout(r, 2000));
-      }
-      if (!approvalVerified) {
-        throw new Error("Could not verify approval in time.");
+      if (allowance < amountToApprove) {
+        toast.info("Approving Stake...");
+        const approveHash = await writeContractAsync({
+          address: usdcToken as `0x${string}`,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [sliceContract as `0x${string}`, amountToApprove]
+        });
+        await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        toast.success("Approval confirmed.");
       }
 
       toast.info("Joining Jury...");
-      // Manual gas limit to prevent simulation failure
-      // RETURN the transaction to be waited on by execute()
-      return contract!.joinDispute(disputeId, { gasLimit: 300000 });
-    });
+
+      const joinHash = await writeContractAsync({
+        address: sliceContract as `0x${string}`,
+        abi: SLICE_ABI,
+        functionName: "joinDispute", // Assuming naming is joinDispute or stake? Original used: `contract.joinDispute`.
+        // ABI in `slice-abi.ts` has `joinDispute`. Use that.
+        args: [BigInt(disputeId)]
+      });
+
+      await publicClient.waitForTransactionReceipt({ hash: joinHash });
+
+      toast.success("Successfully joined the dispute!");
+      return true;
+
+    } catch (error: any) {
+      console.error("Join failed", error);
+      toast.error(`Join failed: ${error.shortMessage || error.message}`);
+      return false;
+    } finally {
+      setIsJoining(false);
+    }
   };
 
-  return { findActiveDispute, joinDispute, isLoading, isFinding, isReady };
+  return {
+    findActiveDispute,
+    joinDispute,
+    isLoading: isJoining, // Mapped to match old hook
+    isFinding,
+    isReady: !!address
+  };
 }
-

@@ -4,26 +4,25 @@ import React, { useState } from "react";
 import { useConnect } from "@/providers/ConnectProvider";
 import { toast } from "sonner";
 import { Terminal, Send, Zap } from "lucide-react";
+import { useWalletClient } from "wagmi";
 
 export const MinimalDebugger = () => {
-  const { address, signer } = useConnect();
+  const { address } = useConnect();
+  const { data: walletClient } = useWalletClient();
   const [logs, setLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const addLog = (msg: string) => setLogs((prev) => [`> ${msg}`, ...prev]);
 
   // TEST 1: The "Hands Off" Approach
-  // We send NO gas, NO type, NO fees. We let the embedded wallet decide.
   const sendAuto = async () => {
     await runTest("AUTO_ESTIMATE", {
-      to: address, // Send to self
+      to: address,
       value: "0x0",
     });
   };
 
   // TEST 2: The "Smart Wallet Safe" Approach
-  // We force 150,000 gas (0x249F0). This is enough for complex Smart Accounts.
-  // 21,000 (0x5208) fails for smart wallets.
   const sendHighGas = async () => {
     await runTest("HIGH_GAS_LIMIT", {
       to: address,
@@ -33,7 +32,7 @@ export const MinimalDebugger = () => {
   };
 
   const runTest = async (testName: string, payload: any) => {
-    if (!signer || !signer.provider) {
+    if (!walletClient) {
       toast.error("Wallet not ready");
       return;
     }
@@ -43,33 +42,28 @@ export const MinimalDebugger = () => {
     addLog(`🚀 Starting Test: ${testName}`);
 
     try {
-      // Cast to 'any' to access low-level send
-      const rawProvider = signer.provider as any;
-
       // 1. Force Chain Switch (Just in case)
       try {
-        const chainId = await rawProvider.send("eth_chainId", []);
-        if (chainId !== "0x2105") {
-          // Base Mainnet
+        const chainId = await walletClient.getChainId();
+        if (chainId !== 8453) { // 0x2105
           addLog("⚠️ Wrong Chain. Switching...");
-          await rawProvider.send("wallet_switchEthereumChain", [
-            { chainId: "0x2105" },
-          ]);
+          await walletClient.switchChain({ id: 8453 });
         }
-      } catch (_e) {}
+      } catch (_e) { }
 
-      // 2. Add 'from' address (standard requirement)
+      // 2. Add 'from' address
       const fullPayload = {
-        from: address,
+        from: address as `0x${string}`,
         ...payload,
       };
 
       addLog(`📦 Payload: ${JSON.stringify(fullPayload)}`);
 
       // 3. Send
-      const txHash = await rawProvider.send("eth_sendTransaction", [
-        fullPayload,
-      ]);
+      const txHash = await walletClient.request({
+        method: "eth_sendTransaction",
+        params: [fullPayload] as any,
+      });
 
       addLog(`✅ SUCCESS! Hash: ${txHash}`);
       toast.success(`${testName} Passed!`);

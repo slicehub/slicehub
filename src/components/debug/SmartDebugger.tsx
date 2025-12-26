@@ -4,16 +4,18 @@ import React, { useState } from "react";
 import { useConnect } from "@/providers/ConnectProvider";
 import { toast } from "sonner";
 import { Zap, CheckCircle2 } from "lucide-react";
+import { useWalletClient } from "wagmi";
 
 export const SmartDebugger = () => {
-  const { address, signer } = useConnect();
+  const { address } = useConnect();
+  const { data: walletClient } = useWalletClient();
   const [logs, setLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const addLog = (msg: string) => setLogs((prev) => [`> ${msg}`, ...prev]);
 
   const sendStrictType2 = async () => {
-    if (!signer || !signer.provider) {
+    if (!walletClient) {
       toast.error("Wallet not ready");
       return;
     }
@@ -23,28 +25,19 @@ export const SmartDebugger = () => {
     addLog("🚀 Starting Corrected EIP-1559 Test...");
 
     try {
-      const rawProvider = signer.provider as any;
-
       // 1. Detect Chain
-      const chainId = await rawProvider.send("eth_chainId", []);
+      const chainId = await walletClient.getChainId();
       addLog(`🔗 Chain: ${chainId}`);
 
       // 2. Construct Payload
-      // FIXED VALUES: Priority Fee < Max Fee
       const payload = {
-        from: address,
-        to: address,
+        from: address as `0x${string}`,
+        to: address as `0x${string}`,
         value: "0x0",
         data: "0x",
-
-        type: 2, // Number type for strict schema
-
-        gas: "0x30D40", // 200,000 Gas (Safe for Smart Accounts)
-
-        // FIX:
-        // Priority: 0.05 Gwei (Low enough)
+        type: "0x2", // Must be hex string for eth_sendTransaction usually
+        gas: "0x30D40", // 200,000 Gas
         maxPriorityFeePerGas: "0x2FAF080",
-        // Max Fee:  0.15 Gwei (Higher than priority)
         maxFeePerGas: "0x8F0D180",
       };
 
@@ -59,7 +52,11 @@ export const SmartDebugger = () => {
 
       // 3. Send
       addLog("👉 Sending...");
-      const txHash = await rawProvider.send("eth_sendTransaction", [payload]);
+      // Use raw request
+      const txHash = await walletClient.request({
+        method: "eth_sendTransaction",
+        params: [payload] as any, // Type cast for raw params
+      });
 
       addLog(`✅ SUCCESS! Hash: ${txHash}`);
       toast.success("Transaction Sent!");

@@ -1,3 +1,5 @@
+import { isAddress } from "viem";
+
 /**
  * Shortens a wallet address to the format 0x1234...5678
  * @param address The full wallet address (or any string)
@@ -10,12 +12,13 @@ export const shortenAddress = (
 ): string => {
   if (!address) return "";
 
-  // Basic check to see if it looks like an ETH address (0x followed by chars)
-  // Logic: starts with 0x and is length 42.
-  // Allow flexible length for testnet/other items but generally ensure it's long enough to need shortening.
-  const isAddress = address.startsWith("0x") && address.length > 10;
-
-  if (!isAddress) return address;
+  // Use Viem to validate it's a real Ethereum address
+  if (!isAddress(address)) {
+    // Fallback logic for non-address strings (like names)
+    return address.length > 20
+      ? `${address.substring(0, chars + 2)}...${address.substring(address.length - chars)}`
+      : address;
+  }
 
   return `${address.substring(0, chars + 2)}...${address.substring(address.length - chars)}`;
 };

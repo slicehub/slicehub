@@ -20,7 +20,7 @@ export default function JoinDisputePage() {
   const disputeId = Number(params?.id);
 
   // 1. Fetch details
-  const { dispute, isLoading: isLoadingDispute } = useGetDispute(
+  const { dispute, loading: isLoadingDispute } = useGetDispute(
     disputeId.toString(),
   );
 

@@ -21,7 +21,7 @@ export default function DisputeOverviewPage() {
   const params = useParams();
   const disputeId = (params?.id as string) || "1";
 
-  const { dispute, isLoading } = useGetDispute(disputeId);
+  const { dispute, loading: isLoading } = useGetDispute(disputeId);
 
   const handleBack = () => router.back();
   const handleStartReview = () =>

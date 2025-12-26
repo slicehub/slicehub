@@ -4,16 +4,18 @@ import React, { useState } from "react";
 import { useConnect } from "@/providers/ConnectProvider";
 import { toast } from "sonner";
 import { Terminal, Play } from "lucide-react";
+import { useWalletClient } from "wagmi";
 
 export const BaseRawDebugger = () => {
-  const { address, signer } = useConnect();
+  const { address } = useConnect();
+  const { data: walletClient } = useWalletClient();
   const [logs, setLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const addLog = (msg: string) => setLogs((prev) => [`> ${msg}`, ...prev]);
 
   const handleSafeRawSend = async () => {
-    if (!address || !signer || !signer.provider) {
+    if (!address || !walletClient) {
       toast.error("Wallet not ready");
       return;
     }
@@ -23,20 +25,14 @@ export const BaseRawDebugger = () => {
     addLog("🚀 Starting Safe Raw Transaction...");
 
     try {
-      // FIX: Cast provider to 'any' to access the .send() method
-      const rawProvider = signer.provider as any;
-
-      // 1. Force Chain Switch via Ethers 'send' (Standard RPC method)
+      // 1. Force Chain Switch 
       try {
-        const chainId = await rawProvider.send("eth_chainId", []);
+        const chainId = await walletClient.getChainId();
         addLog(`Current Chain ID: ${chainId}`);
 
-        if (chainId !== "0x2105") {
-          // 8453 (Base Mainnet)
-          addLog("⚠️ Switching to Base Mainnet (0x2105)...");
-          await rawProvider.send("wallet_switchEthereumChain", [
-            { chainId: "0x2105" },
-          ]);
+        if (chainId !== 8453) {
+          addLog("⚠️ Switching to Base Mainnet (8453)...");
+          await walletClient.switchChain({ id: 8453 }); // 0x2105 technically default wagmi logic
           addLog("✅ Switch request sent");
         }
       } catch (switchErr: any) {
@@ -45,15 +41,13 @@ export const BaseRawDebugger = () => {
 
       // 2. Construct Raw EIP-1559 Payload (Type 2)
       const rawPayload = {
-        from: address,
-        to: address, // Send to self
+        from: address as `0x${string}`,
+        to: address as `0x${string}`, // Send to self
         value: "0x0",
         data: "0x",
-        chainId: "0x2105", // Base Mainnet
+        chainId: "0x2105", // Base Mainnet (Hex)
         type: "0x2", // ❗ FORCE EIP-1559
         gas: "0x5208", // 21,000 Gas Limit
-
-        // Hardcoded fees (approx 0.05 - 0.1 gwei)
         maxFeePerGas: "0x5F5E100", // 0.1 Gwei
         maxPriorityFeePerGas: "0x2FAF080", // 0.05 Gwei
       };
@@ -61,12 +55,13 @@ export const BaseRawDebugger = () => {
       addLog("📦 Payload constructed:");
       addLog(JSON.stringify(rawPayload, null, 2));
 
-      // 3. Send using rawProvider.send
-      addLog("👉 Sending via provider.send('eth_sendTransaction')...");
+      // 3. Send using client.request
+      addLog("👉 Sending via walletClient.request('eth_sendTransaction')...");
 
-      const txHash = await rawProvider.send("eth_sendTransaction", [
-        rawPayload,
-      ]);
+      const txHash = await walletClient.request({
+        method: "eth_sendTransaction",
+        params: [rawPayload] as any,
+      });
 
       addLog(`✅ SUCCESS! Hash: ${txHash}`);
       toast.success("Raw Transaction Sent!");
@@ -117,7 +112,7 @@ export const BaseRawDebugger = () => {
         </div>
         <div className="flex justify-between">
           <span>Method:</span>
-          <span className="text-[#8c8fff] font-bold">provider.send()</span>
+          <span className="text-[#8c8fff] font-bold">client.request()</span>
         </div>
       </div>
 

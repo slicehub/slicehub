@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useSliceContract } from "./useSliceContract";
-import { toast } from "sonner";
+import { useWriteContract, usePublicClient } from "wagmi";
+import { SLICE_ABI, SLICE_ADDRESS } from "@/config/contracts";
 import { uploadJSONToIPFS } from "@/util/ipfs";
+import { toast } from "sonner";
 
 export function useCreateDispute() {
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
   const [isCreating, setIsCreating] = useState(false);
-  const contract = useSliceContract();
 
   const createDispute = async (
     defenderAddress: string,
@@ -17,19 +19,16 @@ export function useCreateDispute() {
     },
     jurorsRequired: number = 3,
   ): Promise<boolean> => {
-    if (!contract) {
-      toast.error("Wallet not connected");
-      return false;
-    }
-
-    setIsCreating(true);
     try {
-      toast.info("Uploading evidence to IPFS...");
+      setIsCreating(true);
 
+      // 1. Upload Metadata (Off-chain)
+      toast.info("Uploading evidence to IPFS...");
       const ipfsHash = await uploadJSONToIPFS({
         ...disputeData,
         category,
       });
+
       if (!ipfsHash) {
         throw new Error("Failed to upload to IPFS");
       }
@@ -37,36 +36,40 @@ export function useCreateDispute() {
       console.log("IPFS Hash created:", ipfsHash);
       toast.info("Creating dispute on-chain...");
 
-      // 1. Call the contract function
-      const time = 60 * 60 * 24;
-      const tx = await contract.createDispute({
-        defender: defenderAddress,
-        category: category,
-        ipfsHash: ipfsHash,
-        jurorsRequired: BigInt(jurorsRequired),
-        paySeconds: BigInt(time),
-        commitSeconds: BigInt(time),
-        revealSeconds: BigInt(time),
+      // 2. Send Transaction
+      const time = BigInt(60 * 60 * 24); // 24 hours per phase
+
+      const hash = await writeContractAsync({
+        address: SLICE_ADDRESS,
+        abi: SLICE_ABI,
+        functionName: "createDispute",
+        args: [{ // Check ABI: createDispute takes a struct "DisputeConfig"
+          defender: defenderAddress as `0x${string}`,
+          category: category,
+          ipfsHash: ipfsHash,
+          jurorsRequired: BigInt(jurorsRequired),
+          paySeconds: time,
+          commitSeconds: time,
+          revealSeconds: time
+        }],
       });
 
-      console.log("Transaction sent:", tx.hash);
+      console.log("Creation TX sent:", hash);
       toast.info("Transaction sent. Waiting for confirmation...");
 
-      // 2. Wait for the transaction to be mined
-      const receipt = await tx.wait();
-      console.log("Transaction confirmed:", receipt);
+      // 3. Wait for Receipt
+      if (publicClient) {
+        await publicClient.waitForTransactionReceipt({ hash });
+      }
 
       toast.success("Dispute created successfully!");
-      return true; // SUCCESS
-    } catch (error) {
-      console.error("Error creating dispute:", error);
-      const detailedError =
-        (error as any).reason ||
-        (error as any).shortMessage ||
-        (error as any).message ||
-        "Unknown error";
-      toast.error(`Create Failed: ${detailedError}`);
-      return false; // FAILURE
+      return true;
+
+    } catch (error: any) {
+      console.error("Create dispute failed", error);
+      const msg = error.reason || error.shortMessage || error.message || "Unknown error";
+      toast.error(`Create Failed: ${msg}`);
+      return false;
     } finally {
       setIsCreating(false);
     }

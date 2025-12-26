@@ -1,14 +1,14 @@
 // src/hooks/useReveal.ts
 import { useState, useEffect } from "react";
 import { useConnect } from "@/providers/ConnectProvider";
-import { useSliceContract } from "@/hooks/useSliceContract";
+import { SLICE_ADDRESS } from "@/config/contracts";
 import { useSliceVoting } from "@/hooks/useSliceVoting";
 import { useGetDispute } from "@/hooks/useGetDispute";
 import { getVoteData } from "@/util/votingStorage";
 
 export function useReveal(disputeId: string) {
   const { address } = useConnect();
-  const contract = useSliceContract();
+  // const contract = useSliceContract(); // Removed
   const { revealVote, isProcessing, logs } = useSliceVoting();
   const { dispute } = useGetDispute(disputeId);
 
@@ -23,16 +23,16 @@ export function useReveal(disputeId: string) {
   };
 
   useEffect(() => {
-    if (address && contract?.target) {
-      const storedData = getVoteData(contract.target as string, disputeId, address);
-      if (storedData) {
-        setLocalVote(storedData.vote);
+    if (address) {
+      const stored = getVoteData(SLICE_ADDRESS, disputeId, address);
+      if (stored) {
+        setLocalVote(stored.vote);
         setHasLocalData(true);
       } else {
         setHasLocalData(false);
       }
     }
-  }, [address, disputeId, contract]);
+  }, [address, disputeId]);
 
   return {
     dispute,

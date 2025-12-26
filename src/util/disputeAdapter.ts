@@ -1,4 +1,4 @@
-import { formatUnits } from "ethers";
+import { formatUnits } from "viem";
 import { fetchJSONFromIPFS } from "@/util/ipfs";
 
 // Define the unified UI model here

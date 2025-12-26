@@ -5,7 +5,7 @@ import React, {
   createContext,
   useContext,
 } from "react";
-import { Signer } from "ethers";
+
 import { useEmbedded } from "./EmbeddedProvider";
 import { usePrivy } from "@privy-io/react-auth";
 import { useConnect as useWagmiConnect, useDisconnect } from "wagmi";
@@ -15,7 +15,6 @@ interface ConnectContextType {
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   address: string | null;
-  signer: Signer | null;
   isConnecting: boolean;
   isWrongNetwork: boolean;
 }
@@ -29,7 +28,7 @@ export const ConnectProvider = ({ children }: { children: ReactNode }) => {
   const { disconnect: wagmiDisconnect } = useDisconnect();
 
   // Unified State from useSmartWallet (which uses Wagmi)
-  const { address, signer, isWrongNetwork } = useSmartWallet();
+  const { address, isWrongNetwork } = useSmartWallet();
 
   const connect = async () => {
     if (isEmbedded) {
@@ -56,7 +55,6 @@ export const ConnectProvider = ({ children }: { children: ReactNode }) => {
         connect,
         disconnect,
         address: address || null,
-        signer,
         isConnecting: false,
         isWrongNetwork,
       }}

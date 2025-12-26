@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useChainId } from "wagmi";
 import { useFundWallet } from "@privy-io/react-auth";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import { DepositIcon, SendIcon, ReceiveIcon } from "./icons/ActionIcons";
 import { useConnect } from "@/providers/ConnectProvider";
@@ -22,7 +22,7 @@ export const BalanceCard: React.FC = () => {
   const { address } = useConnect();
   const { usdcToken } = getContractsForChain(chainId);
 
-  const { formatted, isLoading, error, refetch } = useTokenBalance(usdcToken);
+  const { formatted, loading: isLoading, refetch } = useTokenBalance(usdcToken);
   const { fundWallet } = useFundWallet();
 
   const [isSendOpen, setIsSendOpen] = useState(false);
@@ -30,13 +30,12 @@ export const BalanceCard: React.FC = () => {
 
   const displayBalance = useMemo(() => {
     if (isLoading) return "Loading...";
-    if (error) return "Error";
     if (!address) return "---";
     if (formatted === undefined || formatted === null) return "N/A";
 
     const balance = parseFloat(formatted).toFixed(2);
     return `${balance} USDC`;
-  }, [address, isLoading, formatted, error]);
+  }, [address, isLoading, formatted]);
 
   const handleDeposit = () => {
     if (!address) return;
@@ -66,7 +65,7 @@ export const BalanceCard: React.FC = () => {
               </div>
 
               {/* Retry Button */}
-              {(error || (displayBalance === "N/A" && !isLoading)) && (
+              {(displayBalance === "N/A" && !isLoading) && (
                 <button
                   onClick={() => refetch()}
                   className="p-1.5 hover:bg-white/10 rounded-full transition-colors group"
@@ -77,13 +76,7 @@ export const BalanceCard: React.FC = () => {
               )}
             </div>
 
-            {/* Subtle Error Indicator */}
-            {error && (
-              <div className="flex items-center gap-1 mt-1 text-[#ff5f5f] text-[10px] font-bold animate-in fade-in">
-                <AlertCircle className="w-3 h-3" />
-                <span>Failed to load</span>
-              </div>
-            )}
+            {/* Subtle Error Indicator Removed */}
           </div>
           <button className="bg-[#8c8fff] text-[#1b1c23] border-none rounded-[12.5px] px-[18px] py-[9px] h-7 flex items-center justify-center font-manrope font-extrabold text-xs tracking-[-0.36px] cursor-pointer hover:opacity-90 whitespace-nowrap shrink-0 mt-0 transition-opacity">
             Details

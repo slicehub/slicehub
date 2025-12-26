@@ -1,14 +1,12 @@
-import { solidityPackedKeccak256 } from "ethers";
-import { keccak_256 } from "@noble/hashes/sha3.js";
+import { encodePacked, keccak256, toHex, fromHex } from "viem";
 
 /**
  * Generate a random identity secret for voting
- * This should be stored securely by the user (e.g., in localStorage)
  */
 export function generateIdentitySecret(): bigint {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
-  // Convert to bigint (taking first 31 bytes to fit in Field)
+  // Convert to bigint (taking first 31 bytes to fit in Field if using ZK, though here just random)
   let value = BigInt(0);
   for (let i = 0; i < 31; i++) {
     value = value * BigInt(256) + BigInt(array[i]);
@@ -22,7 +20,6 @@ export function generateIdentitySecret(): bigint {
 export function generateSalt(): bigint {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
-  // Convert to bigint (taking first 31 bytes to fit in Field)
   let value = BigInt(0);
   for (let i = 0; i < 31; i++) {
     value = value * BigInt(256) + BigInt(array[i]);
@@ -32,83 +29,56 @@ export function generateSalt(): bigint {
 
 /**
  * Calculate commitment: keccak256(vote || salt)
- * Uses ethers.js utility to match Solidity's abi.encodePacked structure.
- * * @param vote The vote option (0 or 1).
- * @param salt The secret salt as a BigInt.
- * @returns The commitment hash as a 32-byte hex string (e.g., "0x...").
+ * Equivalent to Solidity: keccak256(abi.encodePacked(vote, salt))
  */
 export function calculateCommitment(vote: number, salt: bigint): string {
-  // Use ethers.solidityPackedKeccak256 to allow identical hashing in Solidity
-  // equivalent to keccak256(abi.encodePacked(vote, salt))
-  return solidityPackedKeccak256(["uint256", "uint256"], [vote, salt]);
+  // Viem: Encode packed arguments then hash
+  return keccak256(
+    encodePacked(
+      ["uint256", "uint256"],
+      [BigInt(vote), salt]
+    )
+  );
 }
 
 /**
  * Calculate nullifier: hash(identity_secret || salt || proposal_id)
- * Returns the nullifier as a 32-byte array
+ * Equivalent to Solidity: keccak256(abi.encodePacked(identitySecret, salt, uint64(proposalId)))
+ * Returns the nullifier as a 32-byte array (Uint8Array)
  */
 export function calculateNullifier(
   identitySecret: bigint,
   salt: bigint,
   proposalId: number,
 ): Uint8Array {
-  const identityBytes = new Uint8Array(32);
-  let identityValue = identitySecret;
-  for (let i = 31; i >= 0; i--) {
-    identityBytes[i] = Number(identityValue & BigInt(0xff));
-    identityValue = identityValue >> BigInt(8);
-  }
-
-  const saltBytes = new Uint8Array(32);
-  let saltValue = salt;
-  for (let i = 31; i >= 0; i--) {
-    saltBytes[i] = Number(saltValue & BigInt(0xff));
-    saltValue = saltValue >> BigInt(8);
-  }
-
-  const proposalBytes = new Uint8Array(8);
-  // Convert proposal_id to big-endian bytes
-  let proposalValue = BigInt(proposalId);
-  for (let i = 7; i >= 0; i--) {
-    proposalBytes[i] = Number(proposalValue & BigInt(0xff));
-    proposalValue = proposalValue >> BigInt(8);
-  }
-
-  // Concatenate all inputs
-  const input = new Uint8Array(
-    identityBytes.length + saltBytes.length + proposalBytes.length,
+  // We use uint64 for proposalId based on the original logic (8 bytes)
+  const hash = keccak256(
+    encodePacked(
+      ["uint256", "uint256", "uint64"],
+      [identitySecret, salt, BigInt(proposalId)]
+    )
   );
-  input.set(identityBytes, 0);
-  input.set(saltBytes, identityBytes.length);
-  input.set(proposalBytes, identityBytes.length + saltBytes.length);
 
-  // Hash using Keccak-256
-  return keccak_256(input);
+  // Convert hex string back to Uint8Array
+  return fromHex(hash, "bytes");
 }
 
 /**
  * Convert Uint8Array to hex string
  */
 export function bytesToHex(bytes: Uint8Array): string {
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return toHex(bytes);
 }
 
 /**
  * Convert hex string to Uint8Array
  */
 export function hexToBytes(hex: string): Uint8Array {
-  const hexWithoutPrefix = hex.startsWith("0x") ? hex.slice(2) : hex;
-  const bytes = new Uint8Array(hexWithoutPrefix.length / 2);
-  for (let i = 0; i < hexWithoutPrefix.length; i += 2) {
-    bytes[i / 2] = parseInt(hexWithoutPrefix.substr(i, 2), 16);
-  }
-  return bytes;
+  return fromHex(hex as `0x${string}`, "bytes");
 }
 
 /**
- * Convert Uint8Array to Buffer (for Stellar SDK)
+ * Convert Uint8Array to Buffer (for Stellar SDK compatibility if needed)
  */
 export function bytesToBuffer(bytes: Uint8Array): Buffer {
   return Buffer.from(bytes);

@@ -4,13 +4,24 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Terminal, Bug, Trophy, Flame, Target } from "lucide-react";
 import ConnectButton from "@/components/ConnectButton";
-import { useSliceContract } from "@/hooks/useSliceContract";
+import { useReadContract } from "wagmi";
+import { SLICE_ABI, SLICE_ADDRESS } from "@/config/contracts";
 import { useConnect } from "@/providers/ConnectProvider";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const contract = useSliceContract();
   const { address } = useConnect();
+
+  // --- 1. Fetch Juror Data (Wagmi Style) ---
+  const { data: jurorDisputes } = useReadContract({
+    address: SLICE_ADDRESS,
+    abi: SLICE_ABI,
+    functionName: "getJurorDisputes",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: {
+      enabled: !!address,
+    }
+  });
 
   // --- State ---
   const [stats, setStats] = useState({
@@ -21,21 +32,15 @@ export default function ProfilePage() {
   const [earnings, setEarnings] = useState("0");
 
   useEffect(() => {
-    const fetchStats = async () => {
-      if (!contract || !address) return;
-      try {
-        const ids = await contract.getJurorDisputes(address);
-        setStats((prev) => ({
-          ...prev,
-          totalCases: ids.length,
-        }));
-        setEarnings("1,240.50");
-      } catch (e) {
-        console.error("Error fetching juror stats:", e);
-      }
-    };
-    fetchStats();
-  }, [contract, address]);
+    if (jurorDisputes) {
+      // Wagmi returns the array directly
+      setStats((prev) => ({
+        ...prev,
+        totalCases: (jurorDisputes as any[]).length,
+      }));
+      setEarnings("1,240.50"); // Mock data
+    }
+  }, [jurorDisputes]);
 
   const openConsole = () =>
     window.dispatchEvent(new Event("open-debug-console"));
