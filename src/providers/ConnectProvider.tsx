@@ -42,9 +42,21 @@ export const ConnectProvider = ({ children }: { children: ReactNode }) => {
         try {
           await wagmiConnect({ connector: xo });
           console.log("[ConnectProvider] Connection successful");
-        } catch (err) {
-          console.error("[ConnectProvider] Connection failed:", err);
-          throw err;
+        } catch (err: any) {
+          console.error("[ConnectProvider] Connect error:", err);
+
+          if (err.name === 'ConnectorAlreadyConnectedError') {
+            console.warn("[ConnectProvider] Connector reported as already connected.");
+
+            // If we are "connected" but have no address, the state is corrupted.
+            // Force a disconnect so the user can click "Connect" again cleanly.
+            if (!address) {
+              console.warn("[ConnectProvider] No address found. Forcing disconnect to reset state.");
+              wagmiDisconnect();
+            }
+          } else {
+            throw err;
+          }
         }
       } else {
         console.error("[ConnectProvider] ❌ CRITICAL: 'xo-connect' connector NOT found in Wagmi config.");

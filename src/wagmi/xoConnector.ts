@@ -34,6 +34,13 @@ export function xoConnector() {
                 const currentChainId = await this.getChainId();
                 const accounts = await this.getAccounts();
 
+                console.log("[xoConnector] Accounts resolved:", accounts);
+
+                if (!accounts || accounts.length === 0) {
+                    const chainHex = `0x${currentChainId.toString(16)}`;
+                    throw new Error(`XO Connect: No accounts found for chain ID ${currentChainId} (${chainHex}). Verify your wallet supports this network.`);
+                }
+
                 return {
                     accounts: accounts as readonly `0x${string}`[],
                     chainId: currentChainId,
@@ -57,6 +64,8 @@ export function xoConnector() {
                     // Default to the first chain in your config, or the requested one
                     const initialChain = chains[0];
                     const initialHexId = `0x${initialChain.id.toString(16)}`;
+
+                    console.log("[xoConnector] Initializing with defaultChainId:", initialHexId);
 
                     providerInstance = new XOConnectProvider({
                         rpcs: getRpcMap(chains),
