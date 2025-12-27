@@ -89,21 +89,28 @@ export function xoConnector() {
                                             // A. Sanitize BigInts -> Hex Strings
                                             const cleanTx = sanitizeParams(originalTx);
 
-                                            // B. FIX: Map 'gas' to 'gasLimit' (Critical for Ethers compatibility)
-                                            if (cleanTx.gas && !cleanTx.gasLimit) {
-                                                console.log("[xoConnector] ⛽ Mapping 'gas' to 'gasLimit':", cleanTx.gas);
+                                            // B. Map 'gas' to 'gasLimit'
+                                            if (cleanTx.gas) {
                                                 cleanTx.gasLimit = cleanTx.gas;
-                                                delete cleanTx.gas; // Remove old key to prevent confusion
+                                                delete cleanTx.gas;
                                             }
 
-                                            // C. Ensure Value exists
+                                            // C. 🚨 CRITICAL FIX: Force Default Gas Limit if missing
+                                            // If the hook didn't provide gas, we inject a high limit (500,000)
+                                            // to prevent the wallet from trying to estimate it (which fails).
+                                            if (!cleanTx.gasLimit) {
+                                                console.warn("[xoConnector] ⚠️ No gas limit found. Injecting default 500k.");
+                                                cleanTx.gasLimit = "0x7A120"; // 500,000 in Hex
+                                            }
+
+                                            // D. Ensure Value exists
                                             if (!cleanTx.value) {
                                                 cleanTx.value = "0x0";
                                             }
 
                                             console.log("[xoConnector] 🚀 Sending FINAL params to XO:", cleanTx);
 
-                                            // D. Send Request & Catch Errors
+                                            // E. Send Request & Catch Errors
                                             return await target.request({
                                                 method: args.method,
                                                 params: [cleanTx]
