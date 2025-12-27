@@ -13,8 +13,6 @@ export function AutoConnect() {
     const attemptedRef = useRef(false);
 
     useEffect(() => {
-        console.log("🛠 ENV CHECK (AutoConnect):");
-        console.log("NEXT_PUBLIC_IS_EMBEDDED:", process.env.NEXT_PUBLIC_IS_EMBEDDED);
 
         // 1. Exit conditions: Not embedded, already connected, or already tried
         if (!isEmbedded || isConnected || attemptedRef.current) return;

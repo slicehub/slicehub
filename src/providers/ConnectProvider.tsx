@@ -8,7 +8,7 @@ import React, {
 
 import { useEmbedded } from "./EmbeddedProvider";
 import { usePrivy } from "@privy-io/react-auth";
-import { useConnect as useWagmiConnect, useDisconnect } from "wagmi";
+import { useConnect as useWagmiConnect, useDisconnect, useAccount } from "wagmi";
 import { useSmartWallet } from "@/hooks/useSmartWallet";
 
 interface ConnectContextType {
@@ -27,21 +27,29 @@ export const ConnectProvider = ({ children }: { children: ReactNode }) => {
   const { connectAsync: wagmiConnect, connectors } = useWagmiConnect();
   const { disconnect: wagmiDisconnect } = useDisconnect();
 
+  // Debugging State
+  const { status, address: wagmiAddress, chainId, isConnected, connector } = useAccount();
+
+  React.useEffect(() => {
+    console.log("⚡ [Wagmi State Change]", {
+      status,       // Should change 'disconnected' -> 'connecting' -> 'connected'
+      address: wagmiAddress,      // Should be 0x...
+      chainId,      // Should be number
+      isConnected,  // Should be true
+      connector: connector?.name // Should be 'XO Wallet'
+    });
+  }, [status, wagmiAddress, chainId, isConnected, connector]);
+
   // Unified State from useSmartWallet (which uses Wagmi)
   const { address, isWrongNetwork } = useSmartWallet();
 
   const connect = async () => {
-    console.log("[ConnectProvider] connect called. isEmbedded:", isEmbedded);
-
     if (isEmbedded) {
-      console.log("[ConnectProvider] Available connectors:", connectors.map(c => c.id));
       const xo = connectors.find((c) => c.id === "xo-connect");
 
       if (xo) {
-        console.log("[ConnectProvider] XO Connector found. Initiating connection...");
         try {
           await wagmiConnect({ connector: xo });
-          console.log("[ConnectProvider] Connection successful");
         } catch (err: any) {
           console.error("[ConnectProvider] Connect error:", err);
 

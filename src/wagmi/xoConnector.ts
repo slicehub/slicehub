@@ -21,30 +21,39 @@ export function xoConnector() {
         type: 'xo-connect',
 
         async connect({ chainId: _chainId } = {}): Promise<any> {
-            console.log("[xoConnector] connect() triggered");
             try {
-                console.log("[xoConnector] Calling getProvider()...");
+                console.log("[Debug] 1. Starting XO Connect...");
                 const provider = await this.getProvider();
-                console.log("[xoConnector] Provider obtained:", provider);
 
-                console.log("[xoConnector] Requesting accounts...");
-                await (provider as any).request({ method: 'eth_requestAccounts' });
-                console.log("[xoConnector] Accounts requested.");
+                console.log("[Debug] 2. Requesting eth_requestAccounts...");
+                const rawAccounts = await (provider as any).request({ method: 'eth_requestAccounts' });
+                console.log("[Debug] 3. Raw Accounts Response:", rawAccounts);
 
                 const currentChainId = await this.getChainId();
+                console.log("[Debug] 4. Raw ChainID:", currentChainId);
+
                 const accounts = await this.getAccounts();
 
-                console.log("[xoConnector] Accounts resolved:", accounts);
+                const hexChainId = `0x${currentChainId.toString(16)}`;
+                const supportedChains = config.chains.map(c => c.id);
+
+                console.log(`[Debug] 5. Chain Check: Wallet is on ${currentChainId} (${hexChainId}). App supports: ${supportedChains.join(', ')}`);
+
+                if (!supportedChains.includes(currentChainId)) {
+                    console.error("🚨 CRITICAL: Wallet chain ID not supported by App Config!");
+                }
 
                 if (!accounts || accounts.length === 0) {
                     const chainHex = `0x${currentChainId.toString(16)}`;
                     throw new Error(`XO Connect: No accounts found for chain ID ${currentChainId} (${chainHex}). Verify your wallet supports this network.`);
                 }
 
-                return {
+                const result = {
                     accounts: accounts as readonly `0x${string}`[],
                     chainId: currentChainId,
-                } as any;
+                };
+                console.log("[Debug] 6. Returning to Wagmi:", result);
+                return result as any;
             } catch (error) {
                 console.error("[xoConnector] ❌ Connection error:", error);
                 throw error;
@@ -54,10 +63,8 @@ export function xoConnector() {
         async getProvider() {
             // Singleton pattern: Only create the provider once
             if (!providerInstance) {
-                console.log("[xoConnector] Importing xo-connect library...");
                 try {
                     const mod = await import('xo-connect');
-                    console.log("[xoConnector] Library imported. Initializing provider...");
                     const XOConnectProvider = mod.XOConnectProvider;
 
                     const chains = config.chains;
@@ -65,7 +72,7 @@ export function xoConnector() {
                     const initialChain = chains[0];
                     const initialHexId = `0x${initialChain.id.toString(16)}`;
 
-                    console.log("[xoConnector] Initializing with defaultChainId:", initialHexId);
+
 
                     providerInstance = new XOConnectProvider({
                         rpcs: getRpcMap(chains),
@@ -94,6 +101,7 @@ export function xoConnector() {
         async isAuthorized() {
             try {
                 const accounts = await this.getAccounts();
+                console.log("[Debug] isAuthorized check. Accounts found:", accounts.length);
                 return !!accounts.length;
             } catch {
                 return false;
