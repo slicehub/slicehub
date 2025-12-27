@@ -13,6 +13,24 @@ function getRpcMap(chains: readonly Chain[]) {
     return rpcMap;
 }
 
+// Helper to convert BigInts to Hex strings recursively
+function sanitizeParams(params: any): any {
+    if (typeof params === 'bigint') {
+        return `0x${params.toString(16)}`;
+    }
+    if (Array.isArray(params)) {
+        return params.map(sanitizeParams);
+    }
+    if (typeof params === 'object' && params !== null) {
+        const newObj: any = {};
+        for (const key in params) {
+            newObj[key] = sanitizeParams(params[key]);
+        }
+        return newObj;
+    }
+    return params;
+}
+
 export function xoConnector() {
     let providerInstance: any = null;
 
@@ -87,10 +105,34 @@ export function xoConnector() {
 
 
 
-                    providerInstance = new XOConnectProvider({
+                    const rawProvider = new XOConnectProvider({
                         rpcs: getRpcMap(chains),
                         defaultChainId: initialHexId,
                     });
+
+                    // === PROXY WRAPPER TO FIX BIGINT ISSUE ===
+                    providerInstance = new Proxy(rawProvider, {
+                        get(target, prop) {
+                            if (prop === 'request') {
+                                return async (args: { method: string, params?: any[] }) => {
+                                    // Intercept transaction calls
+                                    if (args.method === 'eth_sendTransaction') {
+                                        // Sanitize params to remove BigInts
+                                        const cleanParams = sanitizeParams(args.params);
+                                        console.log("[xoConnector] Sanitized tx params:", cleanParams);
+                                        return target.request({
+                                            method: args.method,
+                                            params: cleanParams
+                                        });
+                                    }
+                                    // Pass through other requests
+                                    return target.request(args);
+                                };
+                            }
+                            return (target as any)[prop];
+                        }
+                    });
+                    // =========================================
                 } catch (e) {
                     console.error("[xoConnector] ❌ Failed to import/init xo-connect:", e);
                     throw e;
