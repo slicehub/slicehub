@@ -35,6 +35,16 @@ export function xoConnector() {
 
                 const accounts = await this.getAccounts();
 
+                // === ADD THIS DEBUG BLOCK ===
+                const client = await (provider as any).getClient();
+                console.log("🔍 [Debug] XO Client Data:", client);
+                console.log("💱 [Debug] Available Currencies:", client.currencies);
+                // Check what ID format the wallet uses
+                client.currencies?.forEach((c: any) => {
+                    console.log(`   - Currency: ${c.symbol} | ChainID in Wallet: ${c.chainId} | App Expects: 0x${currentChainId.toString(16)}`);
+                });
+                // ============================
+
                 const hexChainId = `0x${currentChainId.toString(16)}`;
                 const supportedChains = config.chains.map(c => c.id);
 
