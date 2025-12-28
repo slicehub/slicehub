@@ -50,3 +50,7 @@ public/worker-*.js
 
 .repomixignore
 .idea/
+
+# hardhat
+artifacts/
+cache/
