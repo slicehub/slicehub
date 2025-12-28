@@ -20,6 +20,7 @@ export default function CreateDisputePage() {
   const { createDispute, isCreating } = useCreateDispute();
   // 2. Initialize client
   const queryClient = useQueryClient();
+  const [isUploading, setIsUploading] = useState(false);
 
   // Form State
   const [title, setTitle] = useState("");
@@ -30,16 +31,31 @@ export default function CreateDisputePage() {
   const [defenderAddress, setDefenderAddress] = useState("");
   const [evidenceLink, setEvidenceLink] = useState("");
   const [jurorsRequired, setJurorsRequired] = useState(3);
+
+  // Claimant Evidence
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [carouselFiles, setCarouselFiles] = useState<File[]>([]);
 
-  // Handlers
+  // NEW: Defender Evidence
+  const [defDescription, setDefDescription] = useState("");
+  const [defAudioFile, setDefAudioFile] = useState<File | null>(null);
+  const [defCarouselFiles, setDefCarouselFiles] = useState<File[]>([]);
+
+  // Handlers - Claimant
   const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) setAudioFile(e.target.files[0]);
   };
 
   const handleCarouselChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setCarouselFiles(Array.from(e.target.files));
+  };
+
+  // Handlers - Defender
+  const handleDefAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) setDefAudioFile(e.target.files[0]);
+  };
+  const handleDefCarouselChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) setDefCarouselFiles(Array.from(e.target.files));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,51 +71,88 @@ export default function CreateDisputePage() {
       return;
     }
 
-    // 1. Upload Assets First
-    let audioUrl = "";
-    let carouselUrls: string[] = [];
+    try {
+      setIsUploading(true);
 
-    if (audioFile) {
-      const hash = await uploadFileToIPFS(audioFile);
-      if (hash) audioUrl = `https://gateway.pinata.cloud/ipfs/${hash}`;
-    }
+      // 1. Upload Claimant Assets
+      let audioUrl = "";
+      if (audioFile) {
+        toast.info("Uploading claimant audio...");
+        const hash = await uploadFileToIPFS(audioFile);
+        if (hash) audioUrl = `https://gateway.pinata.cloud/ipfs/${hash}`;
+      }
 
-    if (carouselFiles.length > 0) {
-      // Upload all images in parallel
-      const uploadPromises = carouselFiles.map((f) => uploadFileToIPFS(f));
-      const hashes = await Promise.all(uploadPromises);
-      carouselUrls = hashes
-        .filter((h) => h)
-        .map((h) => `https://gateway.pinata.cloud/ipfs/${h}`);
-    }
+      let carouselUrls: string[] = [];
+      if (carouselFiles.length > 0) {
+        toast.info("Uploading claimant photos...");
+        const uploadPromises = carouselFiles.map((f) => uploadFileToIPFS(f));
+        const hashes = await Promise.all(uploadPromises);
+        carouselUrls = hashes
+          .filter((h) => h)
+          .map((h) => `https://gateway.pinata.cloud/ipfs/${h}`);
+      }
 
-    const disputeData = {
-      title,
-      description,
-      category,
-      evidence: evidenceLink ? [evidenceLink] : [],
-      audioEvidence: audioUrl || null,
-      carouselEvidence: carouselUrls,
-      aliases: {
-        claimer: claimerName || "Anonymous Claimant",
-        defender: defenderName || "Anonymous Defendant",
-      },
-      created_at: new Date().toISOString(),
-    };
+      // 2. Upload Defender Assets (NEW)
+      let defAudioUrl: string | null = null;
+      if (defAudioFile) {
+        toast.info("Uploading defender audio...");
+        const hash = await uploadFileToIPFS(defAudioFile);
+        if (hash) defAudioUrl = `https://gateway.pinata.cloud/ipfs/${hash}`;
+      }
 
-    const success = await createDispute(
-      defenderAddress,
-      category,
-      disputeData,
-      jurorsRequired,
-    );
+      let defCarouselUrls: string[] = [];
+      if (defCarouselFiles.length > 0) {
+        toast.info("Uploading defender photos...");
+        const hashes = await Promise.all(
+          defCarouselFiles.map((f) => uploadFileToIPFS(f)),
+        );
+        defCarouselUrls = hashes
+          .filter((h) => h)
+          .map((h) => `https://gateway.pinata.cloud/ipfs/${h}`);
+      }
 
-    if (success) {
-      // 3. Invalidate the 'disputeCount' query so Profile page refetches instantly
-      await queryClient.invalidateQueries({ queryKey: ["disputeCount"] });
-      router.push("/profile");
+      const disputeData = {
+        title,
+        description,
+        category,
+        evidence: evidenceLink ? [evidenceLink] : [],
+        aliases: {
+          claimer: claimerName || "Anonymous Claimant",
+          defender: defenderName || "Anonymous Defendant",
+        },
+        // Claimant Data
+        audioEvidence: audioUrl || null,
+        carouselEvidence: carouselUrls,
+
+        // Defender Data (NEW FIELDS)
+        defenderDescription: defDescription || null,
+        defenderAudioEvidence: defAudioUrl,
+        defenderCarouselEvidence: defCarouselUrls,
+
+        created_at: new Date().toISOString(),
+      };
+
+      const success = await createDispute(
+        defenderAddress,
+        category,
+        disputeData,
+        jurorsRequired,
+      );
+
+      if (success) {
+        // 3. Invalidate the 'disputeCount' query so Profile page refetches instantly
+        await queryClient.invalidateQueries({ queryKey: ["disputeCount"] });
+        router.push("/profile");
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+      toast.error("Failed to upload evidence.");
+    } finally {
+      setIsUploading(false);
     }
   };
+
+  const isProcessing = isCreating || isUploading;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col p-4 pb-[90px]">
@@ -132,7 +185,7 @@ export default function CreateDisputePage() {
               placeholder="e.g. Freelance work not paid"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              disabled={isCreating}
+              disabled={isProcessing}
             />
           </div>
 
@@ -146,7 +199,7 @@ export default function CreateDisputePage() {
                 value={claimerName}
                 onChange={(e) => setClaimerName(e.target.value)}
                 placeholder="e.g. John Doe"
-                disabled={isCreating}
+                disabled={isProcessing}
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -158,7 +211,7 @@ export default function CreateDisputePage() {
                 value={defenderName}
                 onChange={(e) => setDefenderName(e.target.value)}
                 placeholder="e.g. Jane Smith"
-                disabled={isCreating}
+                disabled={isProcessing}
               />
             </div>
           </div>
@@ -169,7 +222,7 @@ export default function CreateDisputePage() {
               className="p-3 bg-[#f5f6f9] rounded-xl text-sm border-none focus:ring-2 focus:ring-[#8c8fff] outline-none"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              disabled={isCreating}
+              disabled={isProcessing}
             >
               <option value="General">General Court</option>
               <option value="Tech">Tech & Software</option>
@@ -188,7 +241,7 @@ export default function CreateDisputePage() {
               placeholder="0x..."
               value={defenderAddress}
               onChange={(e) => setDefenderAddress(e.target.value)}
-              disabled={isCreating}
+              disabled={isProcessing}
             />
           </div>
 
@@ -209,7 +262,7 @@ export default function CreateDisputePage() {
                 value={jurorsRequired}
                 onChange={(e) => setJurorsRequired(Number(e.target.value))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#8c8fff]"
-                disabled={isCreating}
+                disabled={isProcessing}
               />
             </div>
             <p className="text-xs text-gray-400">
@@ -224,7 +277,7 @@ export default function CreateDisputePage() {
               placeholder="Describe the issue in detail..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              disabled={isCreating}
+              disabled={isProcessing}
             />
           </div>
 
@@ -240,49 +293,105 @@ export default function CreateDisputePage() {
                 placeholder="https://..."
                 value={evidenceLink}
                 onChange={(e) => setEvidenceLink(e.target.value)}
-                disabled={isCreating}
+                disabled={isProcessing}
               />
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold text-[#1b1c23]">
-              Voice Statement (Optional)
-            </label>
-            <input
-              type="file"
-              accept="audio/*"
-              onChange={handleAudioChange}
-              disabled={isCreating}
-              className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#f5f6f9] file:text-[#1b1c23] hover:file:bg-gray-200"
-            />
+          {/* CLAIMANT EVIDENCE */}
+          <div className="flex flex-col gap-2 mt-2">
+            <h3 className="font-bold text-sm text-[#1b1c23] uppercase tracking-wide">
+              Claimant Evidence
+            </h3>
+
+            <div className="flex flex-col gap-2">
+              <label className="font-semibold text-[#1b1c23] text-sm">
+                Voice Statement
+              </label>
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={handleAudioChange}
+                disabled={isProcessing}
+                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#f5f6f9] file:text-[#1b1c23] hover:file:bg-gray-200"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="font-semibold text-[#1b1c23] text-sm">
+                Additional Photos (Carousel)
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleCarouselChange}
+                disabled={isProcessing}
+                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#f5f6f9] file:text-[#1b1c23] hover:file:bg-gray-200"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold text-[#1b1c23]">
-              Additional Photos (Carousel)
-            </label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleCarouselChange}
-              disabled={isCreating}
-              className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#f5f6f9] file:text-[#1b1c23] hover:file:bg-gray-200"
-            />
+          {/* DEFENDER EVIDENCE */}
+          <div className="flex flex-col gap-2 mt-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+            <h3 className="font-bold text-sm text-gray-700 uppercase tracking-wide">
+              Defender Evidence (Pre-load)
+            </h3>
+
+            {/* Defender Statement Input */}
+            <div className="flex flex-col gap-2 mb-2">
+              <label className="font-semibold text-[#1b1c23] text-sm">
+                Defender Statement
+              </label>
+              <textarea
+                className="p-3 bg-white rounded-xl text-sm border border-gray-200 outline-none focus:ring-2 ring-[#8c8fff] resize-none"
+                placeholder="Counter-statement from the defendant..."
+                value={defDescription}
+                onChange={(e) => setDefDescription(e.target.value)}
+                rows={3}
+                disabled={isProcessing}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="font-semibold text-[#1b1c23] text-sm">
+                Defender Voice
+              </label>
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={handleDefAudioChange}
+                disabled={isProcessing}
+                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-[#1b1c23] hover:file:bg-gray-100"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="font-semibold text-[#1b1c23] text-sm">
+                Defender Photos
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleDefCarouselChange}
+                disabled={isProcessing}
+                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-[#1b1c23] hover:file:bg-gray-100"
+              />
+            </div>
           </div>
 
           <div className="mt-4">
             <Button
               type="submit"
-              disabled={isCreating}
+              disabled={isProcessing}
               className={`
                 w-full py-6 rounded-xl font-manrope font-semibold  tracking-tight
                 flex items-center justify-center gap-2 transition-all
-                ${isCreating ? "bg-gray-300" : "bg-[#1b1c23] hover:bg-[#31353b] text-white"}
+                ${isProcessing ? "bg-gray-300" : "bg-[#1b1c23] hover:bg-[#31353b] text-white"}
               `}
             >
-              {isCreating ? (
+              {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Uploading to IPFS & Signing...

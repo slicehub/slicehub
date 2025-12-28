@@ -1,4 +1,5 @@
 import { useGetDispute } from "@/hooks/useGetDispute";
+import { shortenAddress } from "@/util/wallet";
 
 export type EvidenceRole = "claimant" | "defendant";
 
@@ -15,6 +16,10 @@ export function useEvidence(disputeId: string, role: EvidenceRole) {
   const partyInfo = {
     name: realName || "Loading...",
     // Use the specific profile images requested
+    // Fallback to shortenAddress if the name looks like a 0x address
+    displayName: realName?.startsWith("0x")
+      ? shortenAddress(realName)
+      : realName,
     avatar: isClaimant
       ? "/images/profiles-mockup/profile-1.jpg"
       : "/images/profiles-mockup/profile-2.jpg",
@@ -22,31 +27,40 @@ export function useEvidence(disputeId: string, role: EvidenceRole) {
   };
 
   // 2. Statement Logic
-  // Claimant gets the Description. Defendant gets a placeholder.
-  const statement = isClaimant
-    ? dispute?.description || "No statement provided."
-    : "The defendant has not submitted a counter-statement on-chain.";
+  let statement = "No statement provided.";
+
+  if (isClaimant) {
+    statement = dispute?.description || "No statement provided.";
+  } else {
+    // For Defender, try to find the specific description, otherwise fallback
+    statement = dispute?.defenderDescription
+      ? dispute.defenderDescription
+      : "The defendant has not submitted a counter-statement text.";
+  }
 
   // 3. Evidence Routing
-  // ONLY show evidence if the role is Claimant.
-  const showEvidence = isClaimant;
+  // Switch sources based on role
+  const rawCarousel = isClaimant
+    ? dispute?.carouselEvidence || []
+    : dispute?.defenderCarouselEvidence || []; // Use defender specific array
 
-  const rawCarousel = showEvidence ? dispute?.carouselEvidence || [] : [];
-  const rawAudio = showEvidence ? dispute?.audioEvidence : null;
+  const rawAudio = isClaimant
+    ? dispute?.audioEvidence
+    : dispute?.defenderAudioEvidence; // Use defender specific audio
 
   // Process Images
   const imageEvidence = rawCarousel.map((url: string, i: number) => ({
     id: `img-${i}`,
     type: "image" as const,
     url,
-    description: `Exhibit ${i + 1}`,
-    uploadDate: "Attached to dispute",
+    description: `Exhibit ${i + 1} (${partyInfo.role})`,
+    uploadDate: "Attached to case file",
   }));
 
   // Process Audio
   const audioEvidence = rawAudio
     ? {
-        id: "audio-main",
+        id: `audio-${role}`,
         title: `${partyInfo.role}'s Statement`,
         duration: "Play Audio",
         url: rawAudio,
@@ -56,6 +70,13 @@ export function useEvidence(disputeId: string, role: EvidenceRole) {
   // Video placeholder (empty for now unless you add video uploads)
   const videoEvidence: any[] = [];
 
+  // Real Carousel (Added to match previous implementation structure if needed)
+  const carouselImages = rawCarousel.map((url: string, i: number) => ({
+    id: `slide-${i}`,
+    url: url,
+    description: `Evidence #${i + 1}`,
+  }));
+
   return {
     dispute,
     partyInfo,
@@ -63,5 +84,6 @@ export function useEvidence(disputeId: string, role: EvidenceRole) {
     imageEvidence,
     videoEvidence,
     audioEvidence,
+    carouselImages,
   };
 }

@@ -21,8 +21,13 @@ export interface DisputeUI {
   // NEW: Real Data Fields
   claimerName?: string;
   defenderName?: string;
-  audioEvidence?: string;
+  audioEvidence?: string | null;
   carouselEvidence?: string[];
+
+  // NEW: Defender Specific Fields
+  defenderDescription?: string;
+  defenderAudioEvidence?: string | null;
+  defenderCarouselEvidence?: string[];
 }
 
 export async function transformDisputeData(
@@ -35,12 +40,18 @@ export async function transformDisputeData(
   // Defaults
   let title = `Dispute #${id}`;
   let description = "No description provided.";
+  let defenderDescription = undefined;
   let category = contractData.category || "General";
   let evidence: string[] = [];
 
   // Containers for metadata
-  let audioEvidence: string | undefined = undefined;
+  let audioEvidence: string | null = null;
   let carouselEvidence: string[] = [];
+
+  // New Containers
+  let defenderAudioEvidence: string | null = null;
+  let defenderCarouselEvidence: string[] = [];
+
   let aliases = { claimer: null, defender: null };
 
   // Fetch IPFS Metadata
@@ -53,8 +64,14 @@ export async function transformDisputeData(
       evidence = meta.evidence || [];
 
       // Capture extra fields
-      audioEvidence = meta.audioEvidence || undefined;
+      audioEvidence = meta.audioEvidence || null;
       carouselEvidence = meta.carouselEvidence || [];
+
+      // Map Defender Data
+      defenderDescription = meta.defenderDescription;
+      defenderAudioEvidence = meta.defenderAudioEvidence || null;
+      defenderCarouselEvidence = meta.defenderCarouselEvidence || [];
+
       if (meta.aliases) aliases = meta.aliases;
     }
   }
@@ -105,5 +122,8 @@ export async function transformDisputeData(
     defenderName: aliases.defender || contractData.defender,
     audioEvidence,
     carouselEvidence,
+    defenderDescription,
+    defenderAudioEvidence,
+    defenderCarouselEvidence,
   };
 }
