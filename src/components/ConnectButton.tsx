@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { useConnect } from "@/providers/ConnectProvider";
+import { useSliceConnect } from "@/hooks/useSliceConnect"; // Updated Import
 import { useEmbedded } from "@/providers/EmbeddedProvider";
 import { toast } from "sonner";
 import { Loader2, Copy, Check, Wallet, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { usePrivy } from "@privy-io/react-auth";
 import {
   Popover,
   PopoverContent,
@@ -15,31 +14,23 @@ import {
 
 const ConnectButton = () => {
   const { isEmbedded } = useEmbedded();
-  const { connect, disconnect, address } = useConnect();
-  const { login, logout } = usePrivy();
+  // 1. Use the unified hook. It handles login logic (Privy vs Embedded) internally.
+  const { connect, disconnect, address, isConnecting } = useSliceConnect();
 
   const [copied, setCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // Popover state
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleConnect = async () => {
-    setIsLoading(true);
     try {
-      if (isEmbedded) {
-        await connect();
-      } else {
-        login();
-      }
+      // 2. Just call connect(). The hook decides the strategy.
+      await connect();
     } catch (error) {
       console.error(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleDisconnect = async () => {
     try {
-      if (!isEmbedded) await logout();
       await disconnect();
       setIsOpen(false);
       toast.success("Disconnected");
@@ -63,7 +54,6 @@ const ConnectButton = () => {
 
   if (address) {
     return (
-      // 2. Use Popover instead of manual <div> logic
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -80,14 +70,12 @@ const ConnectButton = () => {
           </Button>
         </PopoverTrigger>
 
-        {/* 3. PopoverContent portals out of the header automatically */}
         <PopoverContent
           align="end"
           sideOffset={8}
           className="w-72 rounded-2xl border-gray-100 p-0 shadow-xl"
         >
           <div className="p-4 space-y-4">
-            {/* Header */}
             <div className="flex items-center justify-between">
               <h4 className="font-manrope font-bold text-[#1b1c23] flex items-center gap-2">
                 <User size={16} /> Account
@@ -97,12 +85,10 @@ const ConnectButton = () => {
               </span>
             </div>
 
-            {/* Address */}
             <div className="break-all rounded-xl border border-gray-100 bg-gray-50 p-3 font-mono text-xs text-gray-600">
               {address}
             </div>
 
-            {/* Actions */}
             <div className="flex flex-col gap-2">
               <Button
                 variant="secondary"
@@ -136,22 +122,19 @@ const ConnectButton = () => {
     );
   }
 
-  // Login Button (Unchanged)
   return (
     <Button
       onClick={handleConnect}
-      disabled={isLoading}
+      disabled={isConnecting}
       className="h-11 rounded-2xl bg-[#1b1c23] px-6 text-base font-bold text-white shadow-lg hover:bg-[#2c2d33]"
     >
-      {isLoading ? (
+      {isConnecting ? (
         <>
-          {" "}
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Connecting...{" "}
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Connecting...
         </>
       ) : (
         <>
-          {" "}
-          <Wallet className="mr-2 h-4 w-4" /> Login{" "}
+          <Wallet className="mr-2 h-4 w-4" /> Login
         </>
       )}
     </Button>

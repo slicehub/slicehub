@@ -1,14 +1,13 @@
-// src/hooks/useReveal.ts
 import { useState, useEffect } from "react";
-import { useConnect } from "@/providers/ConnectProvider";
+import { useSliceConnect } from "@/hooks/useSliceConnect"; // Updated
 import { SLICE_ADDRESS } from "@/config/contracts";
 import { useSliceVoting } from "@/hooks/useSliceVoting";
 import { useGetDispute } from "@/hooks/useGetDispute";
 import { getVoteData } from "@/util/votingStorage";
 
 export function useReveal(disputeId: string) {
-  const { address } = useConnect();
-  // const contract = useSliceContract(); // Removed
+  const { address } = useSliceConnect(); // Updated
+
   const { revealVote, isProcessing, logs } = useSliceVoting();
   const { dispute } = useGetDispute(disputeId);
 

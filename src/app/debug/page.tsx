@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { formatUnits } from "viem"; // CHANGED: from ethers to viem
 
 // Hooks
-import { useConnect } from "@/providers/ConnectProvider";
+import { useSliceConnect } from "@/hooks/useSliceConnect";
 import { useSliceVoting } from "@/hooks/useSliceVoting";
 import { useCreateDispute } from "@/hooks/useCreateDispute";
 import { usePayDispute } from "@/hooks/usePayDispute";
@@ -36,7 +36,7 @@ import { SmartDebugger } from "@/components/debug/SmartDebugger";
 
 export default function DebugPage() {
   const router = useRouter();
-  const { address } = useConnect();
+  const { address } = useSliceConnect();
 
   // CHANGED: Use Public Client instead of Ethers Contract
   const publicClient = usePublicClient();

@@ -3,15 +3,14 @@ import { toast } from "sonner";
 import { useGetDispute } from "@/hooks/useGetDispute";
 import { SLICE_ADDRESS } from "@/config/contracts";
 import { useSliceVoting } from "@/hooks/useSliceVoting";
-import { useConnect } from "@/providers/ConnectProvider";
+import { useSliceConnect } from "@/hooks/useSliceConnect"; // Updated
 import { getVoteData } from "@/util/votingStorage";
 
 const STATUS_COMMIT = 1;
 const STATUS_REVEAL = 2;
 
 export function useVote(disputeId: string) {
-  const { address } = useConnect();
-  // const contract = useSliceContract(); // Removed
+  const { address } = useSliceConnect(); // Updated
 
   // Local state
   const [selectedVote, setSelectedVote] = useState<number | null>(null);
@@ -24,10 +23,7 @@ export function useVote(disputeId: string) {
 
   // Load vote from local storage
   useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      address
-    ) {
+    if (typeof window !== "undefined" && address) {
       const stored = getVoteData(SLICE_ADDRESS, disputeId, address);
 
       if (stored) {
@@ -83,21 +79,16 @@ export function useVote(disputeId: string) {
   const isRevealDisabled = !isRevealPhase;
 
   return {
-    // State
     dispute,
     selectedVote,
     hasCommittedLocally,
     isRefreshing,
     isProcessing,
     logs,
-
-    // Status flags
     isCommitPhase,
     isRevealPhase,
     isCommitDisabled,
     isRevealDisabled,
-
-    // Actions
     handleVoteSelect,
     handleCommit,
     handleRefresh,

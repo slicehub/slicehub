@@ -3,28 +3,19 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import {
-  Gavel,
-  Eye,
-  Loader2,
-  ArrowLeft,
-  Wallet,
-  CheckCircle2,
-  ArrowRight,
-  Coins,
-  ShieldAlert,
-  Zap,
+  Gavel, Eye, Loader2, ArrowLeft, Wallet, CheckCircle2,
+  ArrowRight, Coins, ShieldAlert, Zap
 } from "lucide-react";
-import { useConnect } from "@/providers/ConnectProvider";
+import { useSliceConnect } from "@/hooks/useSliceConnect"; // Updated
 import { useDisputeList } from "@/hooks/useDisputeList";
 
 export default function MyVotesPage() {
   const router = useRouter();
-  const { address, connect } = useConnect();
+  // Updated hook usage
+  const { address, connect } = useSliceConnect();
 
-  // --- USE NEW HOOK (Fetching "juror" tasks) ---
   const { disputes, isLoading } = useDisputeList("juror");
 
-  // Filter only actionable phases for the dashboard
   const tasks = disputes.filter(
     (d) =>
       d.phase === "VOTE" ||
@@ -41,10 +32,8 @@ export default function MyVotesPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F8F9FC] font-manrope pb-32 relative overflow-hidden">
-      {/* Background Decor */}
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#8c8fff]/5 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* --- Sticky Header --- */}
       <div className="pt-10 px-6 pb-6 bg-[#F8F9FC]/90 backdrop-blur-md z-20 sticky top-0 border-b border-gray-100/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -66,7 +55,6 @@ export default function MyVotesPage() {
         </div>
       </div>
 
-      {/* --- Content Area --- */}
       <div className="px-5 w-full flex flex-col gap-6 mt-2 relative z-10">
         {!address ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -117,15 +105,13 @@ export default function MyVotesPage() {
                 className="group relative bg-white rounded-[28px] p-1 shadow-[0_4px_25px_-5px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_35px_-5px_rgba(140,143,255,0.15)] transition-all duration-300 cursor-pointer active:scale-[0.98] animate-in slide-in-from-bottom-4 fade-in fill-mode-forwards"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                {/* Status Indicator Bar */}
                 <div
-                  className={`absolute left-0 top-8 bottom-8 w-1.5 rounded-r-full ${
-                    task.phase === "VOTE"
+                  className={`absolute left-0 top-8 bottom-8 w-1.5 rounded-r-full ${task.phase === "VOTE"
                       ? "bg-[#8c8fff]"
                       : task.phase === "REVEAL"
                         ? "bg-[#1b1c23]"
                         : "bg-emerald-500"
-                  }`}
+                    }`}
                 />
 
                 <div className="pl-6 pr-5 py-5 flex flex-col gap-4">
@@ -163,13 +149,12 @@ export default function MyVotesPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div
-                        className={`p-2 rounded-xl ${
-                          task.phase === "VOTE"
+                        className={`p-2 rounded-xl ${task.phase === "VOTE"
                             ? "bg-[#8c8fff]/10 text-[#8c8fff]"
                             : task.phase === "REVEAL"
                               ? "bg-gray-100 text-gray-600"
                               : "bg-emerald-50 text-emerald-600"
-                        }`}
+                          }`}
                       >
                         {task.phase === "VOTE" ? (
                           <Gavel className="w-4 h-4" />
@@ -184,9 +169,8 @@ export default function MyVotesPage() {
                           Deadline
                         </span>
                         <span
-                          className={`text-xs font-black ${
-                            task.isUrgent ? "text-rose-500" : "text-[#1b1c23]"
-                          }`}
+                          className={`text-xs font-black ${task.isUrgent ? "text-rose-500" : "text-[#1b1c23]"
+                            }`}
                         >
                           {task.deadlineLabel}
                         </span>
@@ -196,12 +180,11 @@ export default function MyVotesPage() {
                     <button
                       className={`
                         pl-5 pr-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all duration-300
-                        ${
-                          task.phase === "VOTE"
-                            ? "bg-[#1b1c23] hover:bg-[#32363f]"
-                            : task.phase === "REVEAL"
-                              ? "bg-[#8c8fff] hover:bg-[#7a7de0] shadow-[#8c8fff]/20"
-                              : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
+                        ${task.phase === "VOTE"
+                          ? "bg-[#1b1c23] hover:bg-[#32363f]"
+                          : task.phase === "REVEAL"
+                            ? "bg-[#8c8fff] hover:bg-[#7a7de0] shadow-[#8c8fff]/20"
+                            : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
                         }
                       `}
                     >

@@ -7,7 +7,7 @@ import { InfoCard } from "@/components/category-amount/InfoCard";
 import { SwipeButton } from "@/components/category-amount/SwipeButton";
 import { usePayDispute } from "@/hooks/usePayDispute";
 import { useGetDispute } from "@/hooks/useGetDispute";
-import { useConnect } from "@/providers/ConnectProvider";
+import { useSliceConnect } from "@/hooks/useSliceConnect";
 
 export default function PayDisputePage() {
   const router = useRouter();
@@ -16,7 +16,7 @@ export default function PayDisputePage() {
 
   const { payDispute, isPaying } = usePayDispute();
   const { dispute, refetch } = useGetDispute(disputeId);
-  const { address } = useConnect();
+  const { address } = useSliceConnect();
 
   // State to hold the formatted USDC value
   const [stakeAmountDisplay, setStakeAmountDisplay] =
