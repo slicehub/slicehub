@@ -8,7 +8,7 @@ import {
   WagmiProvider as VanillaWagmiProvider,
   cookieToInitialState,
 } from "wagmi";
-import { PRIVY_APP_ID, PRIVY_CLIENT_ID } from "@/config/app";
+import { PRIVY_APP_ID, PRIVY_CLIENT_ID, IS_EMBEDDED } from "@/config/app";
 import { config } from "@/config";
 import { TimerProvider } from "@/providers/TimerContext";
 import { AutoConnect } from "@/components/AutoConnect";
@@ -23,9 +23,8 @@ export default function ContextProvider({
   cookies?: string | null;
 }) {
   const initialState = cookieToInitialState(config, cookies);
-  const isEmbedded = process.env.NEXT_PUBLIC_IS_EMBEDDED === "true";
 
-  const ActiveWagmiProvider = isEmbedded
+  const ActiveWagmiProvider = IS_EMBEDDED
     ? VanillaWagmiProvider
     : PrivyWagmiProvider;
 
