@@ -1,4 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Home } from "lucide-react";
 
 interface CategoryAmountHeaderProps {
   onBack: () => void;
@@ -16,6 +18,7 @@ export const CategoryAmountHeader: React.FC<CategoryAmountHeaderProps> = ({
   onBack,
   onCategorySelect,
 }) => {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -59,16 +62,26 @@ export const CategoryAmountHeader: React.FC<CategoryAmountHeaderProps> = ({
 
   return (
     <div className="w-full pt-9 px-[18px] pb-0 flex flex-col items-start gap-[27px] relative z-50 mb-4">
-      <button
-        className="bg-transparent border-none p-0 cursor-pointer w-[38px] h-[38px] flex items-center justify-center transition-opacity hover:opacity-70"
-        onClick={onBack}
-      >
-        <img
-          src="/images/category-amount/back-arrow.svg"
-          alt="Back"
-          className="w-full h-full block"
-        />
-      </button>
+      {/* Row for Back + Home buttons */}
+      <div className="flex items-center justify-between w-full">
+        <button
+          className="bg-transparent border-none p-0 cursor-pointer w-[38px] h-[38px] flex items-center justify-center transition-opacity hover:opacity-70"
+          onClick={onBack}
+        >
+          <img
+            src="/images/category-amount/back-arrow.svg"
+            alt="Back"
+            className="w-full h-full block"
+          />
+        </button>
+
+        <button
+          onClick={() => router.push("/disputes")}
+          className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm text-[#1b1c23]"
+        >
+          <Home className="w-5 h-5" />
+        </button>
+      </div>
 
       {/* Dropdown Wrapper */}
       <div className="relative w-[336px] self-center" ref={dropdownRef}>

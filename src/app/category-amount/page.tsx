@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AmountSelector } from "@/components/category-amount/AmountSelector";
 import { SwipeButton } from "@/components/category-amount/SwipeButton";
 import { AlertCircle, ChevronDown, ArrowLeft, Target } from "lucide-react";
+import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 
 export default function CategoryAmountPage() {
   const router = useRouter();
@@ -23,15 +24,7 @@ export default function CategoryAmountPage() {
 
   return (
     <div className="flex flex-col h-screen bg-[#F8F9FC]">
-      {/* 1. Simplified Header (Just the Back Button) */}
-      <div className="px-6 pt-6 pb-2">
-        <button
-          onClick={handleBack}
-          className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
-        >
-          <ArrowLeft className="w-5 h-5 text-[#1b1c23]" />
-        </button>
-      </div>
+      <DisputeOverviewHeader onBack={() => router.back()} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col justify-center px-5 pb-8 gap-4 overflow-y-auto">

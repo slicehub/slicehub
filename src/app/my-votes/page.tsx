@@ -16,14 +16,14 @@ import {
 } from "lucide-react";
 import { useSliceConnect } from "@/hooks/useSliceConnect";
 import { useAccount } from "wagmi";
-import { useDisputeList } from "@/hooks/useDisputeList";
+import { useMyDisputes } from "@/hooks/useMyDisputes";
 
 export default function MyVotesPage() {
   const router = useRouter();
   const { address } = useAccount();
   const { connect } = useSliceConnect();
 
-  const { disputes, isLoading } = useDisputeList("juror");
+  const { disputes, isLoading } = useMyDisputes();
 
   const tasks = disputes.filter(
     (d) =>

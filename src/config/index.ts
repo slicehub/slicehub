@@ -4,6 +4,7 @@ import { injected } from "wagmi/connectors";
 import { xoConnector } from "@/wagmi/xoConnector";
 import { IS_EMBEDDED } from "./app";
 
+// miniapps
 const connectors = IS_EMBEDDED ? [xoConnector()] : [injected()];
 
 const transports = Object.fromEntries(

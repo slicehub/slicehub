@@ -6,17 +6,10 @@ import { useGetDispute } from "@/hooks/useGetDispute";
 import { useExecuteRuling } from "@/hooks/useExecuteRuling";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
-import {
-
-  Loader2,
-  ArrowLeft,
-  Wallet,
-  Trophy,
-  Coins,
-  Gavel,
-} from "lucide-react";
+import { Loader2, ArrowLeft, Wallet, Trophy, Coins, Gavel } from "lucide-react";
 import { toast } from "sonner";
 import { PaginationDots } from "@/components/dispute-overview/PaginationDots";
+import { DisputeOverviewHeader } from "@/components/dispute-overview/DisputeOverviewHeader";
 
 export default function ExecuteRulingPage() {
   const router = useRouter();
@@ -68,18 +61,11 @@ export default function ExecuteRulingPage() {
       {...handlers}
     >
       {/* 1. Header (Transparent & Clean) */}
-      <div className="pt-6 px-6 pb-2 flex items-center justify-between z-10">
-        <button
-          onClick={() => router.back()}
-          className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:scale-105 transition-transform"
-        >
-          <ArrowLeft className="w-5 h-5 text-[#1b1c23]" />
-        </button>
-        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-          Ruling Phase
-        </span>
-        <div className="w-10" /> {/* Spacer for centering */}
-      </div>
+      <DisputeOverviewHeader
+        onBack={() => router.back()}
+        title="Ruling Phase"
+        className="pt-6"
+      />
 
       <div className="flex-1 overflow-y-auto px-6 pb-40 flex flex-col pt-4">
         {/* 2. Hero Section: The "Bag" */}
@@ -179,10 +165,11 @@ export default function ExecuteRulingPage() {
               className={`
                  w-full py-4 px-6 rounded-2xl font-semibold tracking-wide transition-all duration-300 shadow-[0_8px_20px_-6px_rgba(140,143,255,0.4)]
                  flex items-center justify-center gap-2
-                 ${isExecuting
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
-                  : "bg-[#1b1c23] text-white hover:scale-[1.02] active:scale-[0.98]"
-                }
+                 ${
+                   isExecuting
+                     ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
+                     : "bg-[#1b1c23] text-white hover:scale-[1.02] active:scale-[0.98]"
+                 }
                `}
             >
               {isExecuting ? (
