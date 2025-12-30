@@ -194,7 +194,6 @@ export default function ExecuteRulingPage() {
 }
 
 // --- Helper Component for the "Receipt" ---
-
 const RewardRow = ({
   label,
   value,

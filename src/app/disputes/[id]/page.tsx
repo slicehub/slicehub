@@ -30,7 +30,6 @@ export default function DisputeOverviewPage() {
 
   const { handlers } = useSwipeGesture({
     onSwipeLeft: handleStartReview,
-    onSwipeRight: () => router.push("/disputes"),
   });
 
   // Calculate winner logic

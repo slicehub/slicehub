@@ -1,15 +1,16 @@
+// src/hooks/useSwipeGesture.ts
 import { useRef, useCallback, useEffect } from "react";
 
 interface SwipeOptions {
-  onSwipeLeft?: () => void; // Called when swiping LEFT (Navigating to next/right page)
-  onSwipeRight?: () => void; // Called when swiping RIGHT (Navigating to prev/left page)
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
   minSwipeDistance?: number;
 }
 
 export function useSwipeGesture({
   onSwipeLeft,
   onSwipeRight,
-  minSwipeDistance = 50,
+  minSwipeDistance = 100,
 }: SwipeOptions) {
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
@@ -24,15 +25,10 @@ export function useSwipeGesture({
   }, []);
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging.current || !startX.current) return;
-    const touch = e.touches[0];
-    const deltaX = Math.abs(touch.clientX - startX.current);
-    const deltaY = Math.abs(touch.clientY - (startY.current || 0));
+    if (!isDragging.current || !startX.current || !startY.current) return;
 
-    // Prevent vertical scrolling if movement is primarily horizontal
-    if (deltaX > deltaY && deltaX > 10) {
-      e.preventDefault();
-    }
+    // We do NOT preventDefault here anymore to avoid "sticky" vertical scrolling.
+    // Let the browser decide if it's a scroll or not.
   }, []);
 
   const onTouchEnd = useCallback(
@@ -43,16 +39,19 @@ export function useSwipeGesture({
       const touch = e.changedTouches[0];
       const deltaX = startX.current - touch.clientX;
       const deltaY = startY.current - touch.clientY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
 
-      if (
-        Math.abs(deltaX) > Math.abs(deltaY) &&
-        Math.abs(deltaX) > minSwipeDistance
-      ) {
+      // STRICTER CHECK:
+      // 1. Must be longer than minSwipeDistance
+      // 2. Horizontal movement must be at least 2x the Vertical movement
+      //    This ensures we ignore "diagonal" scrolling.
+      if (absX > minSwipeDistance && absX > absY * 2) {
         if (deltaX > 0) {
-          // Swipe Left -> Next Page
+          // Swipe Left -> Next
           onSwipeLeft?.();
         } else {
-          // Swipe Right -> Prev Page
+          // Swipe Right -> Back
           onSwipeRight?.();
         }
       }
@@ -62,7 +61,7 @@ export function useSwipeGesture({
     [minSwipeDistance, onSwipeLeft, onSwipeRight],
   );
 
-  // --- Mouse Events (Desktop Testing) ---
+  // --- Mouse Events (For testing on Desktop) ---
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     startX.current = e.clientX;
     startY.current = e.clientY;
@@ -71,7 +70,8 @@ export function useSwipeGesture({
 
   const onMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging.current) return;
-    e.preventDefault();
+    // Optional: Only prevent default on mouse to stop text selection while dragging
+    // e.preventDefault();
   }, []);
 
   const onMouseUp = useCallback(
@@ -81,16 +81,12 @@ export function useSwipeGesture({
 
       const deltaX = startX.current - e.clientX;
       const deltaY = startY.current - e.clientY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
 
-      if (
-        Math.abs(deltaX) > Math.abs(deltaY) &&
-        Math.abs(deltaX) > minSwipeDistance
-      ) {
-        if (deltaX > 0) {
-          onSwipeLeft?.();
-        } else {
-          onSwipeRight?.();
-        }
+      if (absX > minSwipeDistance && absX > absY * 2) {
+        if (deltaX > 0) onSwipeLeft?.();
+        else onSwipeRight?.();
       }
 
       resetState();
@@ -104,7 +100,6 @@ export function useSwipeGesture({
     isDragging.current = false;
   };
 
-  // Cleanup global listeners if any
   useEffect(() => {
     const handleGlobalMouseUp = () => (isDragging.current = false);
     window.addEventListener("mouseup", handleGlobalMouseUp);
