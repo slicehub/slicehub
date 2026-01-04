@@ -64,9 +64,7 @@ export default function VotePage() {
           <div className="flex justify-between items-end px-1 mt-2">
             <div>
               <h2 className="text-2xl font-extrabold text-[#1b1c23] leading-tight">
-                Make your
-                <br />
-                Ruling
+                Make your judgement
               </h2>
               <p className="text-xs font-bold text-gray-400 mt-1">
                 Review evidence and select a winner.
@@ -154,7 +152,7 @@ export default function VotePage() {
               ) : (
                 <>
                   {" "}
-                  <Scale className="w-4 h-4" /> <span>COMMIT VOTE</span>{" "}
+                  <Scale className="w-4 h-4" /> <span>VOTE</span>{" "}
                 </>
               )}
             </button>

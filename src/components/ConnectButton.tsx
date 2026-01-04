@@ -93,8 +93,7 @@ const ConnectButton = () => {
             <div className="flex flex-col gap-2">
               <Button
                 variant="secondary"
-                size="sm"
-                className="h-9 w-full justify-center rounded-xl bg-[#1b1c23] text-white hover:bg-[#2c2d33]"
+                className="h-9 w-full text-base font-semibold justify-center rounded-xl bg-[#1b1c23] text-white hover:bg-[#2c2d33]"
                 onClick={copyToClipboard}
               >
                 {copied ? (

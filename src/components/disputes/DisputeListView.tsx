@@ -88,7 +88,7 @@ export const DisputeListView: React.FC<Props> = ({
         onClick={onEarnClick}
         className="fixed bottom-[90px] left-1/2 -translate-x-1/2 z-40 w-[241px] h-10 bg-white border-2 border-[#8c8fff] rounded-[14px] font-bold"
       >
-        Earn Judging
+        Start Voting
       </button>
     </div>
   );

@@ -1,5 +1,6 @@
 import React from "react";
 import { CheckCircle2, Lock, Key } from "lucide-react";
+import { shortenAddress } from "@/util/wallet";
 
 interface DisputeCandidateCardProps {
   type: "vote" | "reveal";
@@ -75,7 +76,7 @@ export function DisputeCandidateCard({
         <h3
           className={`text-lg font-extrabold leading-tight ${isSelected ? "text-[#1b1c23]" : "text-gray-700"}`}
         >
-          {partyInfo.name}
+          {shortenAddress(partyInfo.name)}
         </h3>
       </div>
 

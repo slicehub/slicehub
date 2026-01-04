@@ -123,7 +123,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
                   {partyInfo.role}
                 </span>
                 <h2 className="text-xl font-extrabold text-[#1b1c23] leading-tight">
-                  {shortenAddress(partyInfo.name)}
+                  {partyInfo.name}
                 </h2>
                 <div className="flex items-center gap-1.5 mt-1.5 text-[11px] font-bold text-gray-400 bg-gray-50 w-fit px-2 py-1 rounded-lg">
                   <Calendar className="w-3 h-3" />
@@ -173,7 +173,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
                       Audio Recording
                     </p>
-                    <p className="text-sm font-bold">
+                    <p className="text-base font-semibold">
                       {audioEvidence.duration}
                     </p>
                   </div>
