@@ -126,11 +126,7 @@ export default function DebugPage() {
       }
 
       setRawDisputeData({
-        // Struct usually has id. Let's assume d.id exists or d is array.
-        // If d is array (Wagmi default for struct), properties are accessed by index or name if ABI is precise.
-        // Wagmi v2 with Viem usually returns object with named keys if ABI has named outputs.
-        // Assuming object.
-        id: targetId, // Safe fallback
+        id: targetId,
         statusIndex: Number(d.status),
         status: statusLabels[Number(d.status)] || "Unknown",
         claimer: d.claimer,
@@ -174,6 +170,7 @@ export default function DebugPage() {
   // --- 3. Action Handlers ---
   const handleQuickCreate = async () => {
     if (!address) return toast.error("Connect wallet");
+    if (!SLICE_ADDRESS) return toast.error("Contract address missing");
 
     try {
       toast.info("Sending custom createDispute tx...");
@@ -182,10 +179,12 @@ export default function DebugPage() {
         address: SLICE_ADDRESS,
         abi: SLICE_ABI,
         functionName: "createDispute",
+        account: address, // Explicitly pass the account
         args: [
           {
-            claimer: "0x3AE66a6DB20fCC27F3DB3DE5Fe74C108A52d6F29",
-            defender: "0x58609c13942F56e17d36bcB926C413EBbD10e477",
+            // Use different addresses to ensure msg.sender != defender
+            claimer: "0x3AE66a6DB20fCC27F3DB3DE5Fe74C108A52d6F29", // Bob
+            defender: "0x58609c13942F56e17d36bcB926C413EBbD10e477", // Alice
             category: "General",
             ipfsHash:
               "bafkreiamcbxmdxau7daffssq4zcpaplfg3wtfwftsmwrvl6rhcesugirvi",
@@ -204,9 +203,8 @@ export default function DebugPage() {
         toast.info("Waiting for confirmation...");
         await publicClient.waitForTransactionReceipt({ hash });
         toast.success("Dispute created successfully!");
+        refreshGlobalState();
       }
-
-      setTimeout(refreshGlobalState, 2000); // Wait for block
     } catch (e: any) {
       console.error(e);
       toast.error(`Create failed: ${e.shortMessage || e.message}`);
@@ -214,20 +212,13 @@ export default function DebugPage() {
   };
 
   const handleJoin = async () => {
-    // NOTE: Using useAssignDispute logic would be ideal if we imported it.
-    // But prompt said we can REPLACE raw calls.
-    // Since `useAssignDispute` is not imported, let's just show a toast or import it.
-    // I'll import it to be clean.
     toast.info(
       "Please use the main UI to join (Code migrated to useAssignDispute)",
     );
-    // Or I can add `useAssignDispute` import.
-    // Let's stick to what's requested: "Replace them with the hooks".
   };
 
   const handleExecute = async () => {
     await executeRuling(targetId);
-    // Wait a bit then refresh
     setTimeout(() => {
       fetchRawDispute();
       refreshGlobalState();
@@ -236,7 +227,6 @@ export default function DebugPage() {
 
   const handleSelectId = (id: string) => {
     setTargetId(id);
-    // Add small timeout to visual feedback
     setTimeout(() => {
       const btn = document.getElementById("btn-fetch");
       if (btn) btn.click();

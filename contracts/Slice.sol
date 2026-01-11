@@ -149,10 +149,10 @@ contract Slice {
         d.revealDeadline = d.commitDeadline + _config.revealSeconds;
 
         // Tracking: Add to user lists
-        userDisputes[msg.sender].push(id);
+        userDisputes[_config.claimer].push(id);
         userDisputes[_config.defender].push(id);
 
-        emit DisputeCreated(id, msg.sender, _config.defender);
+        emit DisputeCreated(id, _config.claimer, _config.defender);
         return id;
     }
 
@@ -230,7 +230,12 @@ contract Slice {
         Dispute storage d = disputeStore[_id];
 
         // 1. Validations: Ensure we are in the registration phase
-        require(d.status == DisputeStatus.Created, "Registration closed");
+        require(
+            d.status == DisputeStatus.Created ||
+                d.status == DisputeStatus.Commit,
+            "Registration closed"
+        );
+        require(disputeJurors[_id].length < d.jurorsRequired, "Jury is full");
         require(
             block.timestamp <= d.payDeadline,
             "Registration deadline passed"
@@ -246,14 +251,7 @@ contract Slice {
 
         totalStakePerDispute[_id] += _amount;
 
-        // 3. Check for duplicates in the candidate pool
-        // Renamed local variable to _candidates to avoid shadowing
-        address[] memory _candidates = candidates[_id];
-        for (uint i = 0; i < _candidates.length; i++) {
-            require(_candidates[i] != msg.sender, "Already registered");
-        }
-
-        // 4. Transfer Amount
+        // 3. Transfer Amount
         bool success = stakingToken.transferFrom(
             msg.sender,
             address(this),
@@ -261,8 +259,8 @@ contract Slice {
         );
         require(success, "Transfer failed");
 
-        // 5. Update State
-        candidates[_id].push(msg.sender);
+        // 4. Update State
+        disputeJurors[_id].push(msg.sender);
         jurorStakes[_id][msg.sender] = _amount;
         jurorDisputes[msg.sender].push(_id);
 

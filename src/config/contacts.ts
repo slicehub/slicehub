@@ -12,6 +12,12 @@ export const AVAILABLE_AVATARS = [
   "/images/profiles-mockup/profile-4.jpg",
   "/images/profiles-mockup/profile-5.jpg",
   "/images/profiles-mockup/profile-6.jpg",
+  "/images/profiles-mockup/profile-7.jpg",
+  "/images/profiles-mockup/profile-8.jpg",
+  "/images/profiles-mockup/profile-9.jpg",
+  "/images/profiles-mockup/profile-10.jpg",
+  "/images/profiles-mockup/profile-11.jpg",
+  "/images/profiles-mockup/profile-12.jpg",
 ];
 
 // You can expand this later to load from LocalStorage or an API

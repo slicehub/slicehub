@@ -73,41 +73,7 @@ export function AddContactDialog({
         </DialogHeader>
 
         <div className="flex flex-col gap-6 mt-4">
-          {/* Avatar Selection */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-400 uppercase">
-              Choose Avatar
-            </label>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {AVAILABLE_AVATARS.map((src) => (
-                <button
-                  key={src}
-                  type="button"
-                  onClick={() => setSelectedAvatar(src)}
-                  className={cn(
-                    "relative w-12 h-12 rounded-full shrink-0 border-2 transition-all overflow-hidden",
-                    selectedAvatar === src
-                      ? "border-[#8c8fff] scale-110"
-                      : "border-transparent opacity-50 hover:opacity-100",
-                  )}
-                >
-                  <Image
-                    src={src}
-                    alt="Avatar option"
-                    fill
-                    className="object-cover"
-                  />
-                  {selectedAvatar === src && (
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                      <Check className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Inputs */}
+          {/* 1. Inputs (Moved to Top) */}
           <div className="flex flex-col gap-4">
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase">
@@ -141,6 +107,41 @@ export function AddContactDialog({
                   Please enter a valid 42-character address
                 </p>
               )}
+            </div>
+          </div>
+
+          {/* 2. Avatar Selection (Moved to Bottom) */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-gray-400 uppercase">
+              Choose Avatar
+            </label>
+            {/* UPDATED: 4 Columns Grid */}
+            <div className="grid grid-cols-4 gap-2">
+              {AVAILABLE_AVATARS.map((src) => (
+                <button
+                  key={src}
+                  type="button"
+                  onClick={() => setSelectedAvatar(src)}
+                  className={cn(
+                    "relative w-full aspect-square rounded-xl shrink-0 border-2 transition-all overflow-hidden",
+                    selectedAvatar === src
+                      ? "border-[#8c8fff] scale-105 z-10 shadow-md"
+                      : "border-transparent opacity-50 hover:opacity-100 bg-gray-50",
+                  )}
+                >
+                  <Image
+                    src={src}
+                    alt="Avatar option"
+                    fill
+                    className="object-cover"
+                  />
+                  {selectedAvatar === src && (
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
 

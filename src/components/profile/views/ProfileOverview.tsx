@@ -3,10 +3,10 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { Trophy, Flame, Target, Wallet, ShieldAlert } from "lucide-react";
-import ConnectButton from "@/components/ConnectButton";
 import { useJurorStats } from "@/hooks/useJurorStats";
 import { useWithdraw } from "@/hooks/useWithdraw";
 import { Button } from "@/components/ui/button";
+import { PendingPaymentsDialog } from "@/components/profile/PendingPaymentsDialog";
 
 export const ProfileOverview = () => {
   const router = useRouter();
@@ -15,9 +15,13 @@ export const ProfileOverview = () => {
 
   return (
     <div className="flex flex-col gap-6 pb-20">
-      {/* 1. Hero Card */}
+      {/*0. Pending Payments Alert */}
+      <PendingPaymentsDialog />
+
+      {/* Hero Card */}
       <div className="relative w-full rounded-4xl p-1 bg-linear-to-b from-gray-100 to-white shadow-xl shadow-gray-200/50">
-        <div className="bg-[#1b1c23] rounded-[30px] p-6 pb-8 text-white flex flex-col items-center gap-6 relative overflow-hidden">
+        {/* Changed gap-6 to gap-4 to pull elements closer */}
+        <div className="bg-[#1b1c23] rounded-[30px] p-6 pb-8 text-white flex flex-col items-center gap-4 relative overflow-hidden">
           {/* Avatar Section */}
           <div className="relative z-10 mt-2">
             <div className="w-28 h-28 rounded-full p-1 bg-linear-to-br from-[#8c8fff] to-blue-500 shadow-2xl relative">
@@ -34,18 +38,23 @@ export const ProfileOverview = () => {
             </div>
           </div>
 
-          {/* Name & Connect */}
-          <div className="flex flex-col items-center gap-3 z-10 w-full">
+          {/* Name & Lifetime Earnings - Reduced internal gap */}
+          <div className="flex flex-col items-center gap-1 z-10 w-full">
             <h2 className="font-manrope font-black text-2xl tracking-tight">
               {rank}
             </h2>
-            <div className="scale-95 hover:scale-100 transition-transform duration-200">
-              <ConnectButton />
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest opacity-80">
+                Lifetime Earnings
+              </span>
+              <span className="text-lg font-black text-white tracking-tight">
+                {stats.earnings} USDC
+              </span>
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 divide-x divide-white/10 w-full bg-white/5 border border-white/5 rounded-2xl py-4 backdrop-blur-sm mt-2">
+          {/* Stats Grid - Moved closer via parent gap-4 */}
+          <div className="grid grid-cols-3 divide-x divide-white/10 w-full bg-white/5 border border-white/5 rounded-2xl py-4 backdrop-blur-sm mt-1">
             <StatItem
               icon={<Target className="w-4 h-4 text-emerald-400" />}
               label="Accuracy"
@@ -95,22 +104,7 @@ export const ProfileOverview = () => {
         </div>
       )}
 
-      {/* 3. Lifetime Stats */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between group">
-        <div>
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">
-            Lifetime Earnings
-          </span>
-          <div className="text-3xl font-black text-gray-800 tracking-tight">
-            {stats.earnings} USDC
-          </div>
-        </div>
-        <div className="w-14 h-14 rounded-2xl bg-[#eff0ff] flex items-center justify-center text-[#8c8fff]">
-          <Trophy className="w-6 h-6" />
-        </div>
-      </div>
-
-      {/* 4. Primary Action */}
+      {/* 3. Primary Action */}
       <Button
         onClick={() => router.push("/create")}
         className="h-auto py-5 flex items-center justify-between px-6 rounded-[20px] bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#8c8fff] transition-all group"
