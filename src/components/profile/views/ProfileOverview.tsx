@@ -6,6 +6,7 @@ import { Trophy, Flame, Target, Wallet, ShieldAlert } from "lucide-react";
 import { useJurorStats } from "@/hooks/useJurorStats";
 import { useWithdraw } from "@/hooks/useWithdraw";
 import { Button } from "@/components/ui/button";
+import { PendingPaymentsDialog } from "@/components/profile/PendingPaymentsDialog";
 
 export const ProfileOverview = () => {
   const router = useRouter();
@@ -14,7 +15,10 @@ export const ProfileOverview = () => {
 
   return (
     <div className="flex flex-col gap-6 pb-20">
-      {/* 1. Hero Card */}
+      {/*0. Pending Payments Alert */}
+      <PendingPaymentsDialog />
+
+      {/* Hero Card */}
       <div className="relative w-full rounded-4xl p-1 bg-linear-to-b from-gray-100 to-white shadow-xl shadow-gray-200/50">
         {/* Changed gap-6 to gap-4 to pull elements closer */}
         <div className="bg-[#1b1c23] rounded-[30px] p-6 pb-8 text-white flex flex-col items-center gap-4 relative overflow-hidden">

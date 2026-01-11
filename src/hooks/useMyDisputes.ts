@@ -8,8 +8,10 @@ export function useMyDisputes() {
   const { address } = useAccount();
   const { decimals } = useStakingToken();
 
-  // 1. Fetch disputes where I am a Juror
-  const { data: jurorIds } = useReadContract({
+  // 1. Fetch IDs
+  // We rely on the smart contract fix (userDisputes[_config.claimer])
+  // so these standard calls will now work correctly.
+  const { data: jurorIds, isLoading: loadJuror } = useReadContract({
     address: SLICE_ADDRESS,
     abi: SLICE_ABI,
     functionName: "getJurorDisputes",
@@ -17,8 +19,7 @@ export function useMyDisputes() {
     query: { enabled: !!address },
   });
 
-  // 2. Fetch disputes where I am a Party (Claimant/Defender)
-  const { data: userIds } = useReadContract({
+  const { data: userIds, isLoading: loadUser } = useReadContract({
     address: SLICE_ADDRESS,
     abi: SLICE_ABI,
     functionName: "getUserDisputes",
@@ -26,66 +27,68 @@ export function useMyDisputes() {
     query: { enabled: !!address },
   });
 
-  // 3. Merge IDs and Prepare Calls
-  const calls = useMemo(() => {
-    if (!jurorIds && !userIds) return [];
-
+  // 2. Merge & Deduplicate IDs
+  const sortedIds = useMemo(() => {
     const jIds = (jurorIds as bigint[]) || [];
     const uIds = (userIds as bigint[]) || [];
 
-    // Create a Set to remove duplicates (e.g. if you accidentally joined your own dispute)
-    const uniqueIds = new Set([...jIds, ...uIds].map((id) => id.toString()));
+    const unique = Array.from(
+      new Set([...jIds, ...uIds].map((id) => id.toString())),
+    );
 
-    // Sort descending (Newest first)
-    const sortedIds = Array.from(uniqueIds)
-      .map((id) => BigInt(id))
-      .sort((a, b) => Number(b) - Number(a));
+    return unique.map(BigInt).sort((a, b) => Number(b) - Number(a));
+  }, [jurorIds, userIds]);
 
+  // 3. Prepare Multicall
+  const calls = useMemo(() => {
     return sortedIds.map((id) => ({
       address: SLICE_ADDRESS,
       abi: SLICE_ABI,
       functionName: "disputes",
       args: [id],
     }));
-  }, [jurorIds, userIds]);
+  }, [sortedIds]);
 
-  // 4. Fetch Data
-  const {
-    data: results,
-    isLoading: isMulticallLoading,
-    refetch,
-  } = useReadContracts({
+  const { data: results, isLoading: loadMulti } = useReadContracts({
     contracts: calls,
-    query: { enabled: calls.length > 0 },
+    query: { enabled: sortedIds.length > 0 },
   });
 
   const [disputes, setDisputes] = useState<DisputeUI[]>([]);
-  const [isProcessing, setIsProcessing] = useState(true);
 
-  // 5. Transform Data
+  // 4. Transform Data
   useEffect(() => {
-    async function process() {
-      if (!results || results.length === 0) {
-        if (!isMulticallLoading) {
-          setDisputes([]);
-          setIsProcessing(false);
-        }
-        return;
-      }
+    // If results is undefined/null, handle empty state or return
+    if (!results) {
+      if (!loadMulti && sortedIds.length === 0) setDisputes([]);
+      return;
+    }
 
-      setIsProcessing(true);
+    // FIX: Capture 'results' into a local const to satisfy TypeScript's
+    // narrowing inside the async closure below.
+    const currentResults = results;
+
+    async function process() {
       const processed = await Promise.all(
-        results.map(async (result) => {
-          if (result.status !== "success") return null;
-          return await transformDisputeData(result.result, decimals);
+        currentResults.map(async (res, idx) => {
+          if (res.status !== "success") return null;
+
+          // Inject ID manually to be safe
+          const id = sortedIds[idx].toString();
+
+          return await transformDisputeData(
+            { ...(res.result as any), id },
+            decimals,
+          );
         }),
       );
-
       setDisputes(processed.filter((d): d is DisputeUI => d !== null));
-      setIsProcessing(false);
     }
     process();
-  }, [results, isMulticallLoading, decimals]);
+  }, [results, decimals, sortedIds, loadMulti]);
 
-  return { disputes, isLoading: isMulticallLoading || isProcessing, refetch };
+  return {
+    disputes,
+    isLoading: loadJuror || loadUser || loadMulti,
+  };
 }

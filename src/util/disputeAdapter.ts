@@ -19,6 +19,10 @@ export interface DisputeUI {
   defender: string;
   winner?: string;
 
+  // Payment Status Fields
+  claimerPaid: boolean;
+  defenderPaid: boolean;
+
   // Real Data Fields
   claimerName?: string;
   defenderName?: string;
@@ -99,6 +103,13 @@ export async function transformDisputeData(
   );
   const ipfsHash = getField<string>(contractData, "ipfsHash", 6, "");
   const status = Number(getField<number>(contractData, "status", 9, 0));
+  const claimerPaid = getField<boolean>(contractData, "claimerPaid", 10, false);
+  const defenderPaid = getField<boolean>(
+    contractData,
+    "defenderPaid",
+    11,
+    false,
+  );
   const winnerRaw = getField<string>(
     contractData,
     "winner",
@@ -200,6 +211,8 @@ export async function transformDisputeData(
     claimer,
     defender,
     winner,
+    claimerPaid,
+    defenderPaid,
 
     // Map new fields using the aliases found in IPFS
     claimerName: aliases.claimer || claimer,

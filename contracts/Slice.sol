@@ -149,10 +149,10 @@ contract Slice {
         d.revealDeadline = d.commitDeadline + _config.revealSeconds;
 
         // Tracking: Add to user lists
-        userDisputes[msg.sender].push(id);
+        userDisputes[_config.claimer].push(id);
         userDisputes[_config.defender].push(id);
 
-        emit DisputeCreated(id, msg.sender, _config.defender);
+        emit DisputeCreated(id, _config.claimer, _config.defender);
         return id;
     }
 
